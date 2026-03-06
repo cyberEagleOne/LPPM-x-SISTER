@@ -6,6 +6,27 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Laravel
+vendor/
+storage/logs/
+storage/framework/
+bootstrap/cache/
+public/storage/
+.phpunit.result.cache
+
+# Applications
+*.app
+*.exe
+*.war
+
+# Large media files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
