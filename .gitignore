@@ -6,13 +6,11 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Laravel
-vendor/
-storage/logs/
-storage/framework/
-bootstrap/cache/
-public/storage/
-.phpunit.result.cache
+.nyc_output/
+
+# 5. OS Generated Files
+.DS_Store
+Thumbs.db
 
 # Applications
 *.app
