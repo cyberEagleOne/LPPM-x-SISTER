@@ -6,6 +6,25 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+.nyc_output/
+
+# 5. OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Applications
+*.app
+*.exe
+*.war
+
+# Large media files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
