@@ -1,21 +1,53 @@
-const API_BASE_URL = "https://sister-api.kemdiktisaintek.go.id/ws.php/1.0/";
+const axios = require('axios');
+const apiConfig = require('../config/apiConfig');
+const { response } = require('../app');
+require('dotenv').config({ path: '../.env' });
 
-const apiConfig = {
-  API_BASE_URL: API_BASE_URL,
-  
-  URL_AUTHORIZE: `${API_BASE_URL}authorize`,
-  URL_PROFIL_PT: `${API_BASE_URL}referensi/profil_pt`,
-  URL_PERGURUAN_TINGGI: `${API_BASE_URL}referensi/perguruan_tinggi`,
-  URL_SDM: `${API_BASE_URL}referensi/sdm`,
-  
-  URL_PUBLIKASI: `${API_BASE_URL}publikasi`,
-  URL_PENDIDIKAN_FORMAL: `${API_BASE_URL}pendidikan_formal`,
-  URL_JABATAN_FUNGSIONAL: `${API_BASE_URL}jabatan_fungsional`,
-  
-  URL_PENGAJARAN: `${API_BASE_URL}pengajaran`,
-  URL_PENELITIAN: `${API_BASE_URL}penelitian`,
-  URL_PENGABDIAN: `${API_BASE_URL}pengabdian`,
-  URL_BKD_LAPORAN_AKHIR: `${API_BASE_URL}bkd/laporan_akhir_bkd`
-};
+async function getAuthToken() {
+  try {
+    console.log("Sedang meminta token otorisasi...");
+    const response = await axios.post(apiConfig.URL_AUTHORIZE, {
+      id_pengguna: process.env.SISTER_USERNAME, 
+      password: process.env.SISTER_PASSWORD
+    });
+    
+    console.log("Token berhasil didapatkan!");
+    return response.data.token; 
+  } catch (error) {
+    console.error("Gagal login ke SISTER:", error.response?.data || error.message);
+    throw error;
+  }
+}
 
-module.exports = apiConfig;
+async function testLihatResponseSDM() {
+  try {
+    const token = await getAuthToken();
+
+    console.log(`Mengambil data dari: ${apiConfig.URL_SDM}`);
+    const response = await axios.get(apiConfig.URL_SDM, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const dataSdm = response.data;
+    console.log("\n========== HASIL RESPONSE SISTER API ==========");
+    
+    if (Array.isArray(dataSdm)) {
+        console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
+
+        console.log("\nContoh Struktur Data (Item Pertama):");
+        console.dir(dataSdm[0], { depth: null, colors: true });
+    } else {
+        console.log("Struktur Response Utuh:");
+        console.dir(dataSdm, { depth: null, colors: true });
+    }
+    
+    console.log("===============================================\n");
+
+  } catch (error) {
+    console.error("Terjadi kesalahan saat memanggil API:", error.response?.data || error.message);
+  }
+}
+
+testLihatResponseSDM();
