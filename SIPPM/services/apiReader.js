@@ -7,8 +7,9 @@ async function getAuthToken() {
   try {
     console.log("Sedang meminta token otorisasi...");
     const response = await axios.post(apiConfig.URL_AUTHORIZE, {
-      id_pengguna: process.env.SISTER_USERNAME, 
-      password: process.env.SISTER_PASSWORD
+      username: process.env.SISTER_USERNAME, 
+      password: process.env.SISTER_PASSWORD,
+      id_pengguna: process.env.SISTER_ID_PENGGUNA
     });
     
     console.log("Token berhasil didapatkan!");
