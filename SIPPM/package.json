@@ -1,25 +1,26 @@
 {
   "name": "sippm",
   "version": "1.0.0",
-  "description": "LPPM website integrated with SISTER",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cyberEagleOne/LPPM-x-SISTER.git"
-  },
-  "author": "Ariq Fakhrizaki",
+  "keywords": [],
+  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/cyberEagleOne/LPPM-x-SISTER/issues"
-  },
-  "homepage": "https://github.com/cyberEagleOne/LPPM-x-SISTER#readme",
+  "description": "",
   "dependencies": {
     "axios": "^1.13.6",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "mysql2": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }
