@@ -4,23 +4,23 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-interface SisterAuthResponse {
+interface AuthResponse {
   token: string;
 }
 
-export interface SisterSdmResponse {
+export interface SdmResponse {
   id_sdm?: string;
   nama_sdm?: string;
   nidn?: string;
   [key: string]: any;
 }
 
-export class SisterService {
+export class apiReader {
   
   static async getAuthToken(): Promise<string> {
     try {
       console.log("Sedang meminta token otorisasi...");
-      const response = await axios.post<SisterAuthResponse>(Config.URL_AUTHORIZE, {
+      const response = await axios.post<AuthResponse>(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
         id_pengguna: process.env.SISTER_ID_USER
@@ -39,7 +39,7 @@ export class SisterService {
       const token = await this.getAuthToken();
 
       console.log(`Mengambil data dari: ${Config.URL_SDM}`);
-      const response = await axios.get<SisterSdmResponse[]>(Config.URL_SDM, {
+      const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -67,5 +67,5 @@ export class SisterService {
 }
 
 if (require.main === module) {
-  SisterService.testLihatResponseSDM();
+  apiReader.testLihatResponseSDM();
 }
