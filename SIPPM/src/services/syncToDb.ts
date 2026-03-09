@@ -17,6 +17,7 @@ export class syncToDB {
             let countInserted = 0;
 
             for(const sdm of dataSDM){
+                console.log(`Mencoba mengambil data dosen ke ${countInserted + 1}`);
                 if(!sdm.nidn || sdm.nidn.trim() === '') continue;
                 
                 const dummyEmail = `${sdm.nidn}@sister.sync`;
@@ -25,7 +26,7 @@ export class syncToDB {
                 const query = `
                 INSERT INTO users (id, nama, nidn, email, password) 
                 VALUES (?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE name = VALUES(name)
+                ON DUPLICATE KEY UPDATE nama = VALUES(nama)
                 `;
                 await pool.execute(query, [
                     sdm.id_sdm || "ID tidak diketahui",
@@ -37,6 +38,8 @@ export class syncToDB {
                 
                 countInserted++;
             }
+
+            console.log("Data SDM berhasil disimpan");
         } catch (error: any) {
             console.error("Terjadi kesalahan saat sinkronisasi ke DB", error.message);
             
