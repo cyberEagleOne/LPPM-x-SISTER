@@ -64,6 +64,16 @@ export class apiReader {
       console.error("Terjadi kesalahan saat menarik data:", error.response?.data || error.message);
     }
   }
+
+  static async fetchSDM(): Promise<SdmResponse[]> {
+    const token = await this.getAuthToken();
+    const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  }
 }
 
 if (require.main === module) {
