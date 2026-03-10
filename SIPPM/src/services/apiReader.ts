@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
 import { SdmResponse } from '../config/models';
+import pool from '../config/database';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,20 +12,47 @@ interface AuthResponse {
 
 export class apiReader {
   
-  static async getAuthToken(): Promise<string> {
+   static async getAuthToken(): Promise<string>{
     try {
-      console.log("Sedang meminta token otorisasi...");
-      const response = await axios.post<AuthResponse>(Config.URL_AUTHORIZE, {
+      const queryCek = "SELECT id, token, timestamp FROM token ORDER BY id DESC LIMIT 1";
+      const [rows]: any = await pool.execute(queryCek);
+
+      if (rows.length > 0) {
+        const dataToken = rows[0];
+        
+        const waktuBuat = new Date(dataToken.timestamp);
+        const waktuSekarang = new Date();
+        
+        const selisihMilidetik = waktuSekarang.getTime() - waktuBuat.getTime();
+        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60));
+
+        if (selisihMenit < 60) {
+          console.log(`Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
+          return dataToken.token;
+        } else {
+          console.log(`Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
+          await pool.execute("DELETE FROM token WHERE id = ?", [dataToken.id]);
+        }
+      }
+
+      console.log("Meminta token BARU dari SISTER API...");
+      const response = await axios.post(Config.URL_AUTHORIZE, {
+        id_pengguna: process.env.SISTER_ID_PENGGUNA,
         username: process.env.SISTER_USERNAME,
-        password: process.env.SISTER_PASSWORD,
-        id_pengguna: process.env.SISTER_ID_USER
+        password: process.env.SISTER_PASSWORD
       });
+
+      const tokenBaru = response.data.token;
+
+      const queryInsert = "INSERT INTO token (token) VALUES (?)";
+      await pool.execute(queryInsert, [tokenBaru]);
       
-      console.log("Token berhasil didapatkan!");
-      return response.data.token; 
+      console.log("Token baru berhasil disimpan ke database.");
+      return tokenBaru;
+
     } catch (error: any) {
-      console.error("Gagal login ke SISTER API:", error.response?.data || error.message);
-      throw new Error("Gagal mendapatkan token autentikasi SISTER");
+      console.error("Terjadi kesalahan saat mengurus token:", error.message);
+      throw error;
     }
   }
 
