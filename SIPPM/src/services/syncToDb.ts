@@ -1,4 +1,5 @@
-import { apiReader, SdmResponse } from './apiReader';
+import { apiReader } from './apiReader';
+import { SdmResponse } from '../config/models';
 import pool from '../config/database';
 
 export class syncToDB {

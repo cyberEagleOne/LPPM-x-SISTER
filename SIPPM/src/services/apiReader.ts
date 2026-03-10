@@ -1,18 +1,12 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
+import { SdmResponse } from '../config/models';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 interface AuthResponse {
   token: string;
-}
-
-export interface SdmResponse {
-  id_sdm?: string;
-  nama_sdm?: string;
-  nidn?: string;
-  [key: string]: any;
 }
 
 export class apiReader {
@@ -52,7 +46,7 @@ export class apiReader {
       if (Array.isArray(dataSdm) && dataSdm.length > 0) {
           console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
           console.log("\nContoh Struktur Data (Item Pertama):");
-          console.dir(dataSdm[0], { depth: null, colors: true });
+          console.dir(dataSdm[88], { depth: null, colors: true });
       } else {
           console.log("Struktur Response Utuh:");
           console.dir(dataSdm, { depth: null, colors: true });
