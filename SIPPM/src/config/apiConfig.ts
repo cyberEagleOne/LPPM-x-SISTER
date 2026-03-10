@@ -13,5 +13,6 @@ export class Config {
     static URL_PENGAJARAN: string = `${Config.API_BASE_URL}pengajaran`
     static URL_PENELITIAN: string = `${Config.API_BASE_URL}penelitian`
     static URL_PENGABDIAN: string = `${Config.API_BASE_URL}pengabdian`
+    static URL_BIDANG_ILMU: string = `${Config.API_BASE_URL}data_pribadi/bidang_ilmu`
     static URL_BKD_LAPORAN_AKHIR: string = `${Config.API_BASE_URL}bkd/laporan_akhir_bkd`
 }

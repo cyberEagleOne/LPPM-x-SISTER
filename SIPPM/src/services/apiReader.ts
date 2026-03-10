@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
-import { SdmResponse, token } from '../config/models';
+import { SdmResponse, Token } from '../config/models';
 import dotenv from 'dotenv';
 import pool from '../config/database';
 
@@ -11,33 +11,27 @@ export class apiReader {
 
   static async getAuthToken(): Promise<string> {
     try {
-      // 1. Ambil token terakhir dari database
-      // Asumsi nama tabel: 'token' dan kolom waktu: 'timestamp'
       const queryCek = "SELECT id, token, timestamp FROM token ORDER BY id DESC LIMIT 1";
-      const [rows] = await pool.execute<token[]>(queryCek);
+      const [rows] = await pool.execute<Token[]>(queryCek);
 
       if (rows.length > 0) {
         const dataToken = rows[0];
-        
-        // 2. Hitung selisih waktu
+
         const waktuBuat = new Date(dataToken.timestamp);
         const waktuSekarang = new Date();
         
         const selisihMilidetik = waktuSekarang.getTime() - waktuBuat.getTime();
-        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60)); // Ubah milidetik ke menit
+        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60));
 
-        // 3. Evaluasi (Apakah umurnya di bawah 60 menit?)
         if (selisihMenit < 60) {
-          console.log(`✅ Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
-          return dataToken.token; // Langsung kembalikan tokennya, tidak perlu hit SISTER
+          console.log(`Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
+          return dataToken.token;
         } else {
-          console.log(`⚠️ Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
-          // Hapus token yang sudah usang
+          console.log(`Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
           await pool.execute("DELETE FROM token WHERE id = ?", [dataToken.id]);
         }
       }
 
-      // 4. Jika tidak ada token (kosong) ATAU token sudah dihapus di atas, Minta yang Baru!
       console.log("⏳ Meminta token BARU dari SISTER API...");
       const response = await axios.post(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
@@ -47,9 +41,7 @@ export class apiReader {
 
       const tokenBaru = response.data.token;
 
-      // 5. Simpan token baru ke database
       const queryInsert = "INSERT INTO token (token) VALUES (?)";
-      // Kita asumsikan kolom 'timestamp' di tabelmu sudah diatur 'CURRENT_TIMESTAMP' secara otomatis oleh MySQL
       await pool.execute(queryInsert, [tokenBaru]);
       
       console.log("✅ Token baru berhasil disimpan ke database.");
@@ -98,6 +90,33 @@ export class apiReader {
       headers: {
         'Authorization': `Bearer ${token}`
       }
+    });
+    return response.data;
+  }
+
+  static async fetchListPenelitian(id_sdm: string): Promise<any[]> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}?id_sdm=${id_sdm}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data; 
+  }
+
+  static async fetchDetailPenelitian(id_penelitian: string): Promise<any> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}/${id_penelitian}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  static async fetchBidangIlmu(id_sdm: string): Promise<any[]> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_BIDANG_ILMU}/${id_sdm}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.data;
   }
