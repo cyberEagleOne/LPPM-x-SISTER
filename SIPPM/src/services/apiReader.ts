@@ -1,89 +1,63 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
+import { SdmResponse, token } from '../config/models';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+import pool from '../config/database';
 
 dotenv.config();
 
-const TOKEN_CACHE_FILE = path.join(__dirname, '../../.sister_token_cache');
-
-const TOKEN_LIFETIME_MS = (parseInt(process.env.SISTER_TOKEN_LIFETIME_MINUTES || '55')) * 60 * 1000;
-
-
-
-interface TokenCache {
-  token: string;
-  created_at: number; 
-}
-
-export interface SdmResponse {
-  id_sdm?: string;
-  nama_sdm?: string;
-  nidn?: string;
-  [key: string]: any;
-}
 
 export class apiReader {
 
-  private static readCachedToken(): string | null {
+  static async getAuthToken(): Promise<string> {
     try {
-      if (!fs.existsSync(TOKEN_CACHE_FILE)) return null;
+      // 1. Ambil token terakhir dari database
+      // Asumsi nama tabel: 'token' dan kolom waktu: 'timestamp'
+      const queryCek = "SELECT id, token, timestamp FROM token ORDER BY id DESC LIMIT 1";
+      const [rows] = await pool.execute<token[]>(queryCek);
 
-      const raw = fs.readFileSync(TOKEN_CACHE_FILE, 'utf-8');
-      const cache: TokenCache = JSON.parse(raw);
+      if (rows.length > 0) {
+        const dataToken = rows[0];
+        
+        // 2. Hitung selisih waktu
+        const waktuBuat = new Date(dataToken.timestamp);
+        const waktuSekarang = new Date();
+        
+        const selisihMilidetik = waktuSekarang.getTime() - waktuBuat.getTime();
+        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60)); // Ubah milidetik ke menit
 
-      const elapsed = Date.now() - cache.created_at;
-      const lifetimeMinutes = TOKEN_LIFETIME_MS / 60000;
-
-      if (elapsed < TOKEN_LIFETIME_MS) {
-        const sisaMenit = Math.round((TOKEN_LIFETIME_MS - elapsed) / 60000);
-        console.log(`Token cache masih valid (sisa ${sisaMenit} menit dari ${lifetimeMinutes} menit)`);
-        return cache.token;
+        // 3. Evaluasi (Apakah umurnya di bawah 60 menit?)
+        if (selisihMenit < 60) {
+          console.log(`✅ Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
+          return dataToken.token; // Langsung kembalikan tokennya, tidak perlu hit SISTER
+        } else {
+          console.log(`⚠️ Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
+          // Hapus token yang sudah usang
+          await pool.execute("DELETE FROM token WHERE id = ?", [dataToken.id]);
+        }
       }
 
-      console.log(`Token cache sudah expired (lewat ${lifetimeMinutes} menit), perlu generate ulang...`);
-      return null;
-    } catch {
-      return null;
-    }
-  }
-  private static saveCachedToken(token: string): void {
-    const cache: TokenCache = {
-      token,
-      created_at: Date.now()
-    };
-    fs.writeFileSync(TOKEN_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
-    console.log(`Token disimpan ke cache: ${TOKEN_CACHE_FILE}`);
-  }
-  static async getAuthToken(): Promise<string> {
-    const envToken = process.env.SISTER_TOKEN;
-    if (envToken && envToken.trim() !== '') {
-      console.log('Menggunakan SISTER_TOKEN dari .env');
-      return envToken.trim();
-    }
-    const cachedToken = this.readCachedToken();
-    if (cachedToken) {
-      return cachedToken;
-    }
-    try {
-      console.log("Meminta token baru dari SISTER API...");
-      const response = await axios.post<string>(Config.URL_AUTHORIZE, {
+      // 4. Jika tidak ada token (kosong) ATAU token sudah dihapus di atas, Minta yang Baru!
+      console.log("⏳ Meminta token BARU dari SISTER API...");
+      const response = await axios.post(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
         id_pengguna: process.env.SISTER_ID_USER
       });
+
+      const tokenBaru = response.data.token;
+
+      // 5. Simpan token baru ke database
+      const queryInsert = "INSERT INTO token (token) VALUES (?)";
+      // Kita asumsikan kolom 'timestamp' di tabelmu sudah diatur 'CURRENT_TIMESTAMP' secara otomatis oleh MySQL
+      await pool.execute(queryInsert, [tokenBaru]);
       
-      const newToken = response.data;
-      console.log("Token baru berhasil didapatkan!");
+      console.log("✅ Token baru berhasil disimpan ke database.");
+      return tokenBaru;
 
-      // Simpan ke cache supaya tidak request ulang
-      this.saveCachedToken(newToken);
-
-      return newToken; 
     } catch (error: any) {
-      console.error("Gagal login ke SISTER API:", error.response?.data || error.message);
-      throw new Error("Gagal mendapatkan token autentikasi SISTER");
+      console.error("❌ Terjadi kesalahan saat mengurus token:", error.message);
+      throw error;
     }
   }
 
