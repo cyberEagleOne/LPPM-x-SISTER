@@ -10,9 +10,7 @@ const TOKEN_CACHE_FILE = path.join(__dirname, '../../.sister_token_cache');
 
 const TOKEN_LIFETIME_MS = (parseInt(process.env.SISTER_TOKEN_LIFETIME_MINUTES || '55')) * 60 * 1000;
 
-interface AuthResponse {
-  token: string;
-}
+
 
 interface TokenCache {
   token: string;
@@ -70,13 +68,13 @@ export class apiReader {
     }
     try {
       console.log("Meminta token baru dari SISTER API...");
-      const response = await axios.post<AuthResponse>(Config.URL_AUTHORIZE, {
+      const response = await axios.post<string>(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
         id_pengguna: process.env.SISTER_ID_USER
       });
       
-      const newToken = response.data.token;
+      const newToken = response.data;
       console.log("Token baru berhasil didapatkan!");
 
       // Simpan ke cache supaya tidak request ulang

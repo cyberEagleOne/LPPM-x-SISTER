@@ -1,64 +1,8 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
 import { apiReader } from './apiReader';
+import { MitraLitabmas, AnggotaLitabmas, DokumenLitabmas, PenelitianResponse } from '../config/models';
 import pool from '../config/database';
-
-interface MitraLitabmas {
-  id: string;
-  nama: string;
-}
-
-interface AnggotaLitabmas {
-  nama: string;
-  jenis: 'Dosen' | 'Mahasiswa' | 'Profesional/Mitra';
-  id_sdm: string | null;
-  id_pd: string | null; 
-  nipd: string | null;   
-  id_orang: string | null;
-  stat_aktif: boolean;   
-  peran: string;
-}
-
-interface DokumenLitabmas {
-  id: string;
-  nama: string;
-  jenis_dokumen: string;
-  nama_file: string;
-  jenis_file: string;
-  tanggal_upload: string;
-  tautan: string;
-  keterangan: string;
-}
-
-interface PenelitianResponse {
-  id: string;
-  id_kategori_kegiatan: number;
-  judul: string;
-  id_afiliasi: string;
-  afiliasi: string;
-  id_kelompok_bidang: string;
-  kelompok_bidang: string;
-  id_litabmas_sebelumnya: string | null;
-  litabmas_sebelumnya: string | null;
-  id_jenis_skim: string;
-  jenis_skim: string;
-  lokasi: string;
-  tahun_usulan: number;
-  tahun_kegiatan: number;
-  tahun_pelaksanaan: number;
-  lama_kegiatan: number;
-  tahun_pelaksanaan_ke: number;
-  dana_dikti: number;
-  dana_perguruan_tinggi: number;
-  dana_institusi_lain: number;
-  in_kind: string | null;
-  sk_penugasan: string | null;
-  tanggal_sk_penugasan: string | null;
-  mitra_litabmas: MitraLitabmas[];
-  anggota: AnggotaLitabmas[];
-  dokumen: DokumenLitabmas[];
-  [key: string]: any;
-}
 
 export class syncPenelitian {
   static async fetchPenelitianDetail(token: string, id: string): Promise<PenelitianResponse | null> {
