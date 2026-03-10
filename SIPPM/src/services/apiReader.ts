@@ -1,89 +1,55 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
+import { SdmResponse, Token } from '../config/models';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+import pool from '../config/database';
 
 dotenv.config();
 
-const TOKEN_CACHE_FILE = path.join(__dirname, '../../.sister_token_cache');
-
-const TOKEN_LIFETIME_MS = (parseInt(process.env.SISTER_TOKEN_LIFETIME_MINUTES || '55')) * 60 * 1000;
-
-
-
-interface TokenCache {
-  token: string;
-  created_at: number; 
-}
-
-export interface SdmResponse {
-  id_sdm?: string;
-  nama_sdm?: string;
-  nidn?: string;
-  [key: string]: any;
-}
 
 export class apiReader {
 
-  private static readCachedToken(): string | null {
+  static async getAuthToken(): Promise<string> {
     try {
-      if (!fs.existsSync(TOKEN_CACHE_FILE)) return null;
+      const queryCek = "SELECT id, token, timestamp FROM token ORDER BY id DESC LIMIT 1";
+      const [rows] = await pool.execute<Token[]>(queryCek);
 
-      const raw = fs.readFileSync(TOKEN_CACHE_FILE, 'utf-8');
-      const cache: TokenCache = JSON.parse(raw);
+      if (rows.length > 0) {
+        const dataToken = rows[0];
 
-      const elapsed = Date.now() - cache.created_at;
-      const lifetimeMinutes = TOKEN_LIFETIME_MS / 60000;
+        const waktuBuat = new Date(dataToken.timestamp);
+        const waktuSekarang = new Date();
+        
+        const selisihMilidetik = waktuSekarang.getTime() - waktuBuat.getTime();
+        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60));
 
-      if (elapsed < TOKEN_LIFETIME_MS) {
-        const sisaMenit = Math.round((TOKEN_LIFETIME_MS - elapsed) / 60000);
-        console.log(`Token cache masih valid (sisa ${sisaMenit} menit dari ${lifetimeMinutes} menit)`);
-        return cache.token;
+        if (selisihMenit < 60) {
+          console.log(`Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
+          return dataToken.token;
+        } else {
+          console.log(`Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
+          await pool.execute("DELETE FROM token WHERE id = ?", [dataToken.id]);
+        }
       }
 
-      console.log(`Token cache sudah expired (lewat ${lifetimeMinutes} menit), perlu generate ulang...`);
-      return null;
-    } catch {
-      return null;
-    }
-  }
-  private static saveCachedToken(token: string): void {
-    const cache: TokenCache = {
-      token,
-      created_at: Date.now()
-    };
-    fs.writeFileSync(TOKEN_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
-    console.log(`Token disimpan ke cache: ${TOKEN_CACHE_FILE}`);
-  }
-  static async getAuthToken(): Promise<string> {
-    const envToken = process.env.SISTER_TOKEN;
-    if (envToken && envToken.trim() !== '') {
-      console.log('Menggunakan SISTER_TOKEN dari .env');
-      return envToken.trim();
-    }
-    const cachedToken = this.readCachedToken();
-    if (cachedToken) {
-      return cachedToken;
-    }
-    try {
-      console.log("Meminta token baru dari SISTER API...");
-      const response = await axios.post<string>(Config.URL_AUTHORIZE, {
+      console.log("⏳ Meminta token BARU dari SISTER API...");
+      const response = await axios.post(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
         id_pengguna: process.env.SISTER_ID_USER
       });
+
+      const tokenBaru = response.data.token;
+
+      const queryInsert = "INSERT INTO token (token) VALUES (?)";
+      await pool.execute(queryInsert, [tokenBaru]);
       
-      const newToken = response.data;
-      console.log("Token baru berhasil didapatkan!");
+      console.log("✅ Token baru berhasil disimpan ke database.");
+      return tokenBaru;
 
-      // Simpan ke cache supaya tidak request ulang
-      this.saveCachedToken(newToken);
-
-      return newToken; 
     } catch (error: any) {
-      console.error("Gagal login ke SISTER API:", error.response?.data || error.message);
-      throw new Error("Gagal mendapatkan token autentikasi SISTER");
+      console.error("❌ Terjadi kesalahan saat mengurus token:", error.message);
+      throw error;
     }
   }
 
@@ -124,6 +90,33 @@ export class apiReader {
       headers: {
         'Authorization': `Bearer ${token}`
       }
+    });
+    return response.data;
+  }
+
+  static async fetchListPenelitian(id_sdm: string): Promise<any[]> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}?id_sdm=${id_sdm}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data; 
+  }
+
+  static async fetchDetailPenelitian(id_penelitian: string): Promise<any> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}/${id_penelitian}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  static async fetchBidangIlmu(id_sdm: string): Promise<any[]> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_BIDANG_ILMU}/${id_sdm}`;
+    const response = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.data;
   }
