@@ -40,11 +40,11 @@ export class apiReader {
 
       if (elapsed < TOKEN_LIFETIME_MS) {
         const sisaMenit = Math.round((TOKEN_LIFETIME_MS - elapsed) / 60000);
-        console.log(Token cache masih valid (sisa ${sisaMenit} menit dari ${lifetimeMinutes} menit));
+        console.log(`Token cache masih valid (sisa ${sisaMenit} menit dari ${lifetimeMinutes} menit)`);
         return cache.token;
       }
 
-      console.log(Token cache sudah expired (lewat ${lifetimeMinutes} menit), perlu generate ulang...);
+      console.log(`Token cache sudah expired (lewat ${lifetimeMinutes} menit), perlu generate ulang...`);
       return null;
     } catch {
       return null;
@@ -56,7 +56,7 @@ export class apiReader {
       created_at: Date.now()
     };
     fs.writeFileSync(TOKEN_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
-    console.log(Token disimpan ke cache: ${TOKEN_CACHE_FILE});
+    console.log(`Token disimpan ke cache: ${TOKEN_CACHE_FILE}`);
   }
   static async getAuthToken(): Promise<string> {
     const envToken = process.env.SISTER_TOKEN;
@@ -93,10 +93,10 @@ export class apiReader {
     try {
       const token = await this.getAuthToken();
 
-      console.log(\nMengambil data dari: ${Config.URL_SDM});
+      console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
       const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
         headers: {
-          'Authorization': Bearer ${token}
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -105,7 +105,7 @@ export class apiReader {
       console.log("\n========== HASIL RESPONSE SISTER API ==========");
       
       if (Array.isArray(dataSdm) && dataSdm.length > 0) {
-          console.log(Total Data Ditemukan: ${dataSdm.length} baris);
+          console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
           console.log("\nContoh Struktur Data (Item Pertama):");
           console.dir(dataSdm[0], { depth: null, colors: true });
       } else {
@@ -124,7 +124,7 @@ export class apiReader {
     const token = await this.getAuthToken();
     const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
       headers: {
-        'Authorization': Bearer ${token}
+        'Authorization': `Bearer ${token}`
       }
     });
     return response.data;
