@@ -48,8 +48,7 @@ export interface MitraPenelitian{
   id?: string;
   litabmas_id?: string;
   nama: string;
-  created_at?: Date;
-  updated_at?: Date;
+  [key: string]: any;
 }
 
 export interface DokumenPenelitian{
@@ -62,6 +61,5 @@ export interface DokumenPenelitian{
   tanggal_upload?: Date;
   tautan: string;
   keterangan: string;
-  created_at?: Date;
-  updated_at?: Date;
+  [key: string]: any;
 }

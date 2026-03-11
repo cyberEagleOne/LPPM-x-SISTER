@@ -19,6 +19,10 @@ export class syncToDB {
 
             for(const sdm of dataSDM){
                 console.log(`Mencoba mengambil data dosen ke ${countInserted + 1}`);
+                if(!sdm) {
+                    console.log(`Data SDM urutan ke-${countInserted + 1} terdeteksi kosong/undefined. Di-skip.`);
+                    continue;
+                }
                 if(!sdm.nidn || sdm.nidn.trim() === '') continue;
                 
                 const dummyEmail = `${sdm.nidn}@sister.sync`;
@@ -63,6 +67,10 @@ export class syncToDB {
 
             for (const sdm of dataSDM) {
                 countDosen++;
+                if(!sdm) {
+                    console.log(`Data SDM urutan ke-${countDosen} terdeteksi kosong/undefined. Di-skip.`);
+                    continue;
+                }
                 if (!sdm.id_sdm) continue; 
                 
                 console.log(`\n[${countDosen}/${dataSDM.length}] Memproses data milik: ${sdm.nama_sdm || sdm.id_sdm}`);
@@ -143,7 +151,7 @@ export class syncToDB {
                                 }
                             }
 
-                            if (detail.mitra && Array.isArray(detail.mitra)) {
+                            if (detail.mitra_litabmas && Array.isArray(detail.mitra)) {
                                 for (const mitra of detail.mitra) {
                                     const queryMitra = `
                                         INSERT INTO mitra (id, litabmas_id, nama)
