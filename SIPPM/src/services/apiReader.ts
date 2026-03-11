@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Config } from '../config/apiConfig';
-import { SdmResponse, Token } from '../config/models';
+import { Token } from '../config/models';
+//import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
 import dotenv from 'dotenv';
 import pool from '../config/database';
 
@@ -32,7 +33,7 @@ export class apiReader {
         }
       }
 
-      console.log("⏳ Meminta token BARU dari SISTER API...");
+      console.log("Meminta token BARU dari SISTER API...");
       const response = await axios.post(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
@@ -44,11 +45,11 @@ export class apiReader {
       const queryInsert = "INSERT INTO token (token) VALUES (?)";
       await pool.execute(queryInsert, [tokenBaru]);
       
-      console.log("✅ Token baru berhasil disimpan ke database.");
+      console.log("Token baru berhasil disimpan ke database.");
       return tokenBaru;
 
     } catch (error: any) {
-      console.error("❌ Terjadi kesalahan saat mengurus token:", error.message);
+      console.error("Terjadi kesalahan saat mengurus token:", error.message);
       throw error;
     }
   }
@@ -58,7 +59,7 @@ export class apiReader {
       const token = await this.getAuthToken();
 
       console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
-      const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
+      const response = await axios.get<any[]>(Config.URL_SDM, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -84,9 +85,9 @@ export class apiReader {
     }
   }
 
-  static async fetchSDM(): Promise<SdmResponse[]> {
+  static async fetchSDM(): Promise<any[]> {
     const token = await this.getAuthToken();
-    const response = await axios.get<SdmResponse[]>(Config.URL_SDM, {
+    const response = await axios.get<any[]>(Config.URL_SDM, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -112,11 +113,22 @@ export class apiReader {
     return response.data;
   }
 
-  static async fetchBidangIlmu(id_sdm: string): Promise<any[]> {
+  static async fetchBidangIlmuSDM(id_sdm: string): Promise<any[]> {
     const token = await this.getAuthToken();
     const url = `${Config.URL_BIDANG_ILMU}/${id_sdm}`;
     const response = await axios.get(url, {
       headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  static async fetchBidangIlmuPenelitian(id_pn?: string): Promise<any[]> {
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}/${id_pn}/bidang_ilmu`;
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     return response.data;
   }

@@ -21,12 +21,20 @@ export interface Penelitian{
   id_users?: string;
 }
 
-export interface BidangKeilmuan{
+export interface BidangKeilmuanSDM{
   id?: number;
   urutan?: number;
   id_kelompok_bidang: string;
   kelompok_bidang: string;
-  id_dt_penelitian?: string;
+  id_sdm?: string;
+}
+
+export interface BidangKeilmuanPenelitian{
+  id?: number;
+  urutan?: number;
+  id_kelompok_bidang: string;
+  kelompok_bidang: string;
+  id_penelitian?: string;
 }
 
 export interface DetailPenelitian{
