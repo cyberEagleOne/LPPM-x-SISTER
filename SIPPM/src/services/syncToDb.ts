@@ -67,7 +67,7 @@ export class syncToDB {
 
             for (const sdm of dataSDM) {
                 countDosen++;
-                if(!sdm) {
+                 if(!sdm) {
                     console.log(`Data SDM urutan ke-${countDosen} terdeteksi kosong/undefined. Di-skip.`);
                     continue;
                 }
