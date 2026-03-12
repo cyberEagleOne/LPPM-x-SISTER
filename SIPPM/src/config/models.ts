@@ -1,5 +1,13 @@
 import { RowDataPacket } from 'mysql2';
 
+export interface Token extends RowDataPacket{
+  id: any;
+  token: string;
+  timestamp: any;
+}
+
+//V -UNUSED- V
+
 export interface SdmResponse {
   id_sdm?: string;
   nama_sdm?: string;
@@ -7,11 +15,7 @@ export interface SdmResponse {
   [key: string]: any;
 }
 
-export interface Token extends RowDataPacket{
-  id: any;
-  token: string;
-  timestamp: any;
-}
+
 
 export interface Penelitian{
   id?: string;
