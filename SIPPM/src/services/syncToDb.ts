@@ -49,7 +49,6 @@ export class syncToDB {
                             const queryBidang = `
                                 INSERT INTO bidang_keilmuan_SDM (id, urutan, id_kelompok_bidang, kelompok_bidang, id_sdm)
                                 VALUES (?, ?, ?, ?, ?)
-                                ON DUPLICATE KEY UPDATE kelompok_bidang = VALUES(kelompok_bidang)
                             `;
                             await pool.execute(queryBidang, [
                                 bidang.id || null, 
@@ -218,10 +217,177 @@ export class syncToDB {
             console.error("Terjadi kesalahan saat sinkronisasi penelitian ke DB:", error.message);
         }
     }
+
+    static async syncPublikasiEachSDM(): Promise<void> {
+        try {
+            console.log("Menarik data SDM dari SISTER untuk sinkronisasi Publikasi...");
+            const dataSDM = await apiReader.fetchSDM();
+
+            if (!dataSDM || dataSDM.length === 0) {
+                console.log("Tidak ada data SDM yang ditarik.");
+                return;
+            }
+
+            console.log(`Berhasil mendapatkan ${dataSDM.length} SDM. Mulai menarik riwayat publikasi...`);
+
+            let countDosen = 0;
+
+            for (const sdm of dataSDM) {
+                countDosen++;
+                if (!sdm || !sdm.id_sdm) continue;
+
+                console.log(`\n[${countDosen}/${dataSDM.length}] Memproses publikasi milik: ${sdm.nama_sdm || sdm.id_sdm}`);
+
+                const listPublikasi = await apiReader.fetchListPublikasi(sdm.id_sdm);
+
+                if (!listPublikasi || listPublikasi.length === 0) {
+                    console.log(`   -> Tidak ada data publikasi.`);
+                    continue;
+                }
+
+                for (const pub of listPublikasi) {
+                    const idPublikasi = pub.id || pub.id_publikasi;
+                    if (!idPublikasi) continue;
+
+                    if(!pub) continue;
+
+                    const queryPublikasi = `
+                        INSERT INTO publikasi (
+                            id, kategori_kegiatan, judul, quartile, jenis_publikasi, tanggal, asal_data, id_user
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE 
+                            judul = VALUES(judul), tanggal = VALUES(tanggal)
+                    `;
+                    await pool.execute(queryPublikasi, [
+                        idPublikasi,
+                        pub.kategori_kegiatan || "Unknown",
+                        pub.judul || "Tanpa Judul",
+                        pub.quartile || null,
+                        pub.jenis_publikasi || "Unknown",
+                        pub.tanggal || "Unknown",
+                        pub.asal_data || null,
+                        sdm.id_sdm
+                    ]);
+
+                    const detail = await apiReader.fetchDetailPublikasi(idPublikasi);
+
+                    if (detail) {
+                        const idDetail = detail.id || idPublikasi;
+
+                        const queryDetail = `
+                            INSERT INTO detail_publikasi (
+                                id, kategori_kegiatan, judul, quartile, jenis_publikasi, tanggal, 
+                                id_kategori_kegiatan, id_jenis_publikasi, kategori_capaian_luaran, 
+                                id_kategori_capaian_luaran, judul_litabmas, id_litabmas, nomor_paten, 
+                                pemberi_paten, penerbit, isbn, jumlah_halaman, tautan, keterangan, 
+                                judul_artikel, judul_asli, nama_jurnal, halaman, edisi, volume, nomor, 
+                                doi, issn, e_issn, seminar, prosiding, asal_data, id_publikasi
+                            ) VALUES (
+                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ) ON DUPLICATE KEY UPDATE 
+                                judul = VALUES(judul)
+                        `;
+                        await pool.execute(queryDetail, [
+                            idDetail,
+                            detail.kategori_kegiatan || pub.kategori_kegiatan || "Unknown",
+                            detail.judul || pub.judul || "Tanpa Judul",
+                            detail.quartile || pub.quartile || null,
+                            detail.jenis_publikasi || pub.jenis_publikasi || "Unknown",
+                            detail.tanggal || pub.tanggal || "Unknown",
+                            detail.id_kategori_kegiatan || 0,
+                            detail.id_jenis_publikasi || 0,
+                            detail.kategori_capaian_luaran || "Unknown",
+                            detail.id_kategori_capaian_luaran || null,
+                            detail.judul_litabmas || null,
+                            detail.id_litabmas || null,
+                            detail.nomor_paten || null,
+                            detail.pemberi_paten || null,
+                            detail.penerbit || null,
+                            detail.isbn || null,
+                            detail.jumlah_halaman || null,
+                            detail.tautan || null,
+                            detail.keterangan || null,
+                            detail.judul_artikel || null,
+                            detail.judul_asli || null,
+                            detail.nama_jurnal || null,
+                            detail.halaman || null,
+                            detail.edisi || null,
+                            detail.volume || null,
+                            detail.nomor || null,
+                            detail.doi || null,
+                            detail.issn || null,
+                            detail.e_issn || null,
+                            detail.seminar ? 1 : 0, 
+                            detail.prosiding ? 1 : 0, 
+                            detail.asal_data || pub.asal_data || null,
+                            idPublikasi 
+                        ]);
+
+                        if (detail.penulis && Array.isArray(detail.penulis)) {
+                            for (const penulis of detail.penulis) {
+                                const queryPenulis = `
+                                    INSERT INTO publikasi_penulis (
+                                        id_publikasi, nama, jenis, id_sdm, id_peserta_didik, 
+                                        nomor_induk_peserta_didik, id_orang, urutan, afiliasi, 
+                                        corresponding_author, peran
+                                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    ON DUPLICATE KEY UPDATE 
+                                        nama = VALUES(nama), urutan = VALUES(urutan)
+                                `;
+                                await pool.execute(queryPenulis, [
+                                    idDetail, 
+                                    penulis.nama || "Unknown",
+                                    penulis.jenis || "Dosen", 
+                                    penulis.id_sdm || null,
+                                    penulis.id_peserta_didik || null,
+                                    penulis.nomor_induk_peserta_didik || null,
+                                    penulis.id_orang || null,
+                                    penulis.urutan || 0,
+                                    penulis.afiliasi || "",
+                                    penulis.corresponding_author ? 1 : 0,
+                                    penulis.peran || "Penulis"
+                                ]);
+                            }
+                        }
+
+                        
+                        if (detail.dokumen && Array.isArray(detail.dokumen)) {
+                            for (const dok of detail.dokumen) {
+                                const queryDokumen = `
+                                    INSERT INTO publikasi_dokumen (
+                                        id, id_publikasi, nama, jenis_dokumen, nama_file, 
+                                        jenis_file, tanggal_upload, tautan, keterangan
+                                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    ON DUPLICATE KEY UPDATE 
+                                        nama_file = VALUES(nama_file)
+                                `;
+                                await pool.execute(queryDokumen, [
+                                    dok.id || null, 
+                                    idDetail, 
+                                    dok.nama || "Unknown",
+                                    dok.jenis_dokumen || "Unknown",
+                                    dok.nama_file || "Unknown",
+                                    dok.jenis_file || "Unknown",
+                                    dok.tanggal_upload || null,
+                                    dok.tautan || null,
+                                    dok.keterangan || null
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+            console.log("\nSinkronisasi seluruh hierarki Publikasi sukses!");
+
+        } catch (error: any) {
+            console.error("Terjadi kesalahan saat sinkronisasi publikasi ke DB:", error.message);
+        }
+    }
 }
 
 if (require.main === module) {
-    (async () => {
+    syncToDB.syncPublikasiEachSDM();
+    /*(async () => {
         try {
             console.log("Memulai sinkronisasi SDM...");
 
@@ -230,7 +396,10 @@ if (require.main === module) {
             console.log("Memulai sinkronisasi penelitian...");
             await syncToDB.syncPenelitianEachSDM();
 
-            console.log("Sinkronisasi selesai");
+            console.log("Memulai sinkronisasi publikasi...");
+            await syncToDB.syncPublikasiEachSDM();
+
+            console.log("Sinkronisasi selesai!");
             process.exit(0); 
 
         } catch (error) {
@@ -238,4 +407,5 @@ if (require.main === module) {
             process.exit(1); 
         }
     })();
+    */
 }
