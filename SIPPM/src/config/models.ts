@@ -1,5 +1,13 @@
 import { RowDataPacket } from 'mysql2';
 
+export interface Token extends RowDataPacket{
+  id: any;
+  token: string;
+  timestamp: any;
+}
+
+//V -UNUSED- V
+
 export interface SdmResponse {
   id_sdm?: string;
   nama_sdm?: string;
@@ -7,11 +15,7 @@ export interface SdmResponse {
   [key: string]: any;
 }
 
-export interface Token extends RowDataPacket{
-  id: any;
-  token: string;
-  timestamp: any;
-}
+
 
 export interface Penelitian{
   id?: string;
@@ -21,12 +25,20 @@ export interface Penelitian{
   id_users?: string;
 }
 
-export interface BidangKeilmuan{
+export interface BidangKeilmuanSDM{
   id?: number;
   urutan?: number;
   id_kelompok_bidang: string;
   kelompok_bidang: string;
-  id_dt_penelitian?: string;
+  id_sdm?: string;
+}
+
+export interface BidangKeilmuanPenelitian{
+  id?: number;
+  urutan?: number;
+  id_kelompok_bidang: string;
+  kelompok_bidang: string;
+  id_penelitian?: string;
 }
 
 export interface DetailPenelitian{
@@ -48,8 +60,7 @@ export interface MitraPenelitian{
   id?: string;
   litabmas_id?: string;
   nama: string;
-  created_at?: Date;
-  updated_at?: Date;
+  [key: string]: any;
 }
 
 export interface DokumenPenelitian{
@@ -62,6 +73,5 @@ export interface DokumenPenelitian{
   tanggal_upload?: Date;
   tautan: string;
   keterangan: string;
-  created_at?: Date;
-  updated_at?: Date;
+  [key: string]: any;
 }

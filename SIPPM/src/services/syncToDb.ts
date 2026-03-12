@@ -1,5 +1,5 @@
 import { apiReader } from './apiReader';
-import { SdmResponse, AnggotaPenelitian, BidangKeilmuan, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models';
+//import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
 import pool from '../config/database';
 
 export class syncToDB {
@@ -7,10 +7,11 @@ export class syncToDB {
         try {
             console.log("Meminta apiReadeer untuk menarik data dari SISTER...");
             
-            const dataSDM: SdmResponse[] = await apiReader.fetchSDM();
+            const dataSDM = await apiReader.fetchSDM();
 
             if(!dataSDM || dataSDM.length === 0){
                 console.log("Tidak ada data SDM yang ditarik");
+                return;
             }
 
             console.log(`Berhasil mendapatkan ${dataSDM.length} data. Mulai menyimpan ke database...`);
@@ -19,6 +20,10 @@ export class syncToDB {
 
             for(const sdm of dataSDM){
                 console.log(`Mencoba mengambil data dosen ke ${countInserted + 1}`);
+                if(!sdm) {
+                    console.log(`Data SDM urutan ke-${countInserted + 1} terdeteksi kosong/undefined. Di-skip.`);
+                    continue;
+                }
                 if(!sdm.nidn || sdm.nidn.trim() === '') continue;
                 
                 const dummyEmail = `${sdm.nidn}@sister.sync`;
@@ -36,6 +41,27 @@ export class syncToDB {
                     dummyEmail,
                     defaultPassword
                 ]);
+
+                const listBidangIlmuSDM = await apiReader.fetchBidangIlmuSDM(sdm.id_sdm);
+
+                if(listBidangIlmuSDM && listBidangIlmuSDM.length > 0){
+                    for (const bidang of listBidangIlmuSDM) {
+                            const queryBidang = `
+                                INSERT INTO bidang_keilmuan_SDM (id, urutan, id_kelompok_bidang, kelompok_bidang, id_sdm)
+                                VALUES (?, ?, ?, ?, ?)
+                                ON DUPLICATE KEY UPDATE kelompok_bidang = VALUES(kelompok_bidang)
+                            `;
+                            await pool.execute(queryBidang, [
+                                bidang.id || null, 
+                                bidang.urutan || null,
+                                bidang.id_kelompok_bidang || null,
+                                bidang.kelompok_bidang || "Unknown",
+                                sdm.id_sdm 
+                            ]);
+                    }
+                }
+
+                
                 
                 countInserted++;
             }
@@ -47,10 +73,10 @@ export class syncToDB {
         }
     }
 
-    static async syncPenelitianBySDM(): Promise<void> {
+    static async syncPenelitianEachSDM(): Promise<void> {
         try {
             console.log("Menarik data SDM dari SISTER...");
-            const dataSDM: SdmResponse[] = await apiReader.fetchSDM();
+            const dataSDM = await apiReader.fetchSDM();
 
             if (!dataSDM || dataSDM.length === 0) {
                 console.log("Tidak ada data SDM yang ditarik.");
@@ -63,11 +89,13 @@ export class syncToDB {
 
             for (const sdm of dataSDM) {
                 countDosen++;
+                 if(!sdm) {
+                    console.log(`Data SDM urutan ke-${countDosen} terdeteksi kosong/undefined. Di-skip.`);
+                    continue;
+                }
                 if (!sdm.id_sdm) continue; 
                 
                 console.log(`\n[${countDosen}/${dataSDM.length}] Memproses data milik: ${sdm.nama_sdm || sdm.id_sdm}`);
-
-                const listBidangIlmu = await apiReader.fetchBidangIlmu(sdm.id_sdm);
 
                 const listPenelitian = await apiReader.fetchListPenelitian(sdm.id_sdm); 
 
@@ -78,6 +106,9 @@ export class syncToDB {
 
                 for (const pen of listPenelitian) {
                     const idPenelitian = pen.id || pen.id_penelitian; 
+
+                    const listBidangIlmuPenelitian = await apiReader.fetchBidangIlmuPenelitian(idPenelitian);
+
                     const queryPenelitian = `
                         INSERT INTO penelitian (id, judul, tahun_pelaksanaan, lama_kegiatan, id_users)
                         VALUES (?, ?, ?, ?, ?)
@@ -92,10 +123,10 @@ export class syncToDB {
                         sdm.id_sdm 
                     ]);
 
-                    if (listBidangIlmu && listBidangIlmu.length > 0) {
-                        for (const bidang of listBidangIlmu) {
+                    if (listBidangIlmuPenelitian && listBidangIlmuPenelitian.length > 0) {
+                        for (const bidang of listBidangIlmuPenelitian) {
                             const queryBidang = `
-                                INSERT INTO bidang_keilmuan (id, urutan, id_kelompok_bidang, kelompok_bidang, id_dt_penelitian)
+                                INSERT INTO bidang_keilmuan_pn (id, urutan, id_kelompok_bidang, kelompok_bidang, id_penelitian)
                                 VALUES (?, ?, ?, ?, ?)
                                 ON DUPLICATE KEY UPDATE kelompok_bidang = VALUES(kelompok_bidang)
                             `;
@@ -143,8 +174,8 @@ export class syncToDB {
                                 }
                             }
 
-                            if (detail.mitra && Array.isArray(detail.mitra)) {
-                                for (const mitra of detail.mitra) {
+                            if (detail.mitra_litabmas && Array.isArray(detail.mitra_litabmas)) {
+                                for (const mitra of detail.mitra_litabmas) {
                                     const queryMitra = `
                                         INSERT INTO mitra (id, litabmas_id, nama)
                                         VALUES (?, ?, ?)
@@ -190,5 +221,21 @@ export class syncToDB {
 }
 
 if (require.main === module) {
-  syncToDB.syncPenelitianBySDM();
+    (async () => {
+        try {
+            console.log("Memulai sinkronisasi SDM...");
+
+            await syncToDB.syncSDM();
+            
+            console.log("Memulai sinkronisasi penelitian...");
+            await syncToDB.syncPenelitianEachSDM();
+
+            console.log("Sinkronisasi selesai");
+            process.exit(0); 
+
+        } catch (error) {
+            console.error("Gagal melakukan sinkronisasi:", error);
+            process.exit(1); 
+        }
+    })();
 }
