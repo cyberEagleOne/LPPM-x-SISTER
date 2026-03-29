@@ -1,0 +1,340 @@
+.legacy-admin-shell {
+  --legacy-bg: var(--app-bg);
+  --legacy-surface: var(--app-surface);
+  --legacy-border: var(--app-border);
+  --legacy-border-strong: var(--app-border-strong);
+  --legacy-text: var(--app-text);
+  --legacy-heading: var(--app-heading);
+  --legacy-muted: var(--app-muted);
+  --legacy-primary: var(--app-primary);
+  --legacy-primary-soft: var(--app-primary-soft);
+  --legacy-sidebar: var(--app-secondary);
+  --legacy-sidebar-2: var(--app-secondary-strong);
+  --legacy-sidebar-text: #d6deea;
+  --legacy-sidebar-muted: #93a2ba;
+  --legacy-sidebar-active: rgba(227, 6, 19, 0.18);
+  background: var(--legacy-bg);
+  color: var(--legacy-text);
+  font-family: var(--app-font-sans);
+}
+
+.legacy-admin-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 117, 125, 0.4) transparent;
+}
+
+.legacy-admin-shell ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.legacy-admin-shell ::-webkit-scrollbar-thumb {
+  background: rgba(108, 117, 125, 0.28);
+  border-radius: 999px;
+}
+
+.legacy-admin-shell .legacy-topbar {
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(18px);
+}
+
+.legacy-admin-shell .legacy-topbar :is(button, a) {
+  border-radius: 999px;
+  color: var(--legacy-muted) !important;
+  font-weight: 600;
+}
+
+.legacy-admin-shell .legacy-topbar :is(button, a):hover {
+  background: var(--legacy-primary-soft) !important;
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .legacy-topbar [aria-expanded="true"],
+.legacy-admin-shell .legacy-topbar .bg-red-50,
+.legacy-admin-shell .legacy-topbar .bg-slate-100 {
+  background: var(--legacy-primary-soft) !important;
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .legacy-topbar [class*="text-[#E30613]"] {
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .legacy-topbar .shadow-xl,
+.legacy-admin-shell .legacy-topbar .shadow-sm {
+  border: 1px solid var(--legacy-border) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: var(--app-shadow-md) !important;
+}
+
+.legacy-admin-shell .legacy-topbar :is(form, .rounded-2xl.border, .rounded-lg.border) {
+  border-color: var(--legacy-border) !important;
+}
+
+.legacy-admin-shell .legacy-sidebar {
+  background: linear-gradient(180deg, var(--legacy-sidebar) 0%, var(--legacy-sidebar-2) 100%);
+  border-right: 0;
+  box-shadow: 24px 0 60px rgba(15, 23, 42, 0.08);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-brand {
+  margin: 0;
+  height: 74px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-user-card {
+  margin-inline: 1rem !important;
+  border-radius: 1rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem 1rem 1.05rem;
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-menu-item {
+  color: var(--legacy-sidebar-text);
+  border-radius: 0.95rem;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-menu-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-menu-item.active {
+  background: linear-gradient(135deg, rgba(227, 6, 19, 0.28) 0%, rgba(227, 6, 19, 0.18) 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-menu-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--legacy-primary);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-submenu {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-submenu .legacy-menu-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.legacy-admin-shell .legacy-sidebar .legacy-menu-item[aria-current="page"] {
+  font-weight: 700 !important;
+}
+
+.legacy-admin-shell .legacy-sidebar .volt-sidebar-section {
+  color: var(--legacy-sidebar-muted) !important;
+}
+
+.legacy-admin-shell .legacy-content {
+  background: var(--legacy-bg);
+}
+
+.legacy-admin-shell .volt-shell-main {
+  position: relative;
+  background:
+    radial-gradient(circle at top, rgba(227, 6, 19, 0.06), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 100%);
+}
+
+.legacy-admin-shell .volt-shell-footer,
+.legacy-admin-shell footer {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: blur(18px);
+}
+
+.legacy-admin-shell .legacy-page-header {
+  margin-bottom: 0;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 1.5rem;
+  padding: 1.3rem 1.4rem;
+  box-shadow: var(--app-shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+.legacy-admin-shell .legacy-breadcrumb {
+  color: var(--legacy-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.legacy-admin-shell .legacy-breadcrumb a {
+  color: var(--legacy-muted);
+}
+
+.legacy-admin-shell .legacy-breadcrumb a:hover {
+  color: var(--legacy-primary);
+}
+
+.legacy-admin-shell .legacy-muted {
+  color: var(--legacy-muted);
+}
+
+.legacy-admin-shell :is(
+  .legacy-card,
+  .bg-white.rounded-xl.border,
+  .bg-white.rounded-xl.border-slate-200,
+  .bg-white.rounded-2xl.border,
+  .bg-white.rounded-2xl.border-slate-200,
+  .rounded-xl.border.border-slate-200.bg-white,
+  .rounded-2xl.border.border-slate-200.bg-white
+) {
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  border-radius: 1.25rem !important;
+  background: var(--legacy-surface) !important;
+  box-shadow: var(--app-shadow-sm) !important;
+}
+
+.legacy-admin-shell table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.legacy-admin-shell table thead tr {
+  background: #f8fafc;
+}
+
+.legacy-admin-shell table th {
+  color: var(--legacy-muted) !important;
+  font-size: 0.72rem;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.legacy-admin-shell table td {
+  color: #495057;
+}
+
+.legacy-admin-shell table tbody tr:hover {
+  background: rgba(227, 6, 19, 0.04);
+}
+
+.legacy-admin-shell :is(input, select, textarea) {
+  border-color: var(--legacy-border) !important;
+  border-radius: 1rem !important;
+  background: rgba(248, 250, 252, 0.96) !important;
+  color: var(--legacy-text) !important;
+  box-shadow: none;
+}
+
+.legacy-admin-shell :is(input, select, textarea):focus {
+  border-color: rgba(227, 6, 19, 0.42) !important;
+  box-shadow: 0 0 0 0.24rem rgba(227, 6, 19, 0.11) !important;
+  outline: none;
+}
+
+.legacy-admin-shell :is(button, a) {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.legacy-admin-shell :is(button, a)[class*="border-slate-200"] {
+  border-color: var(--legacy-border) !important;
+}
+
+.legacy-admin-shell :is(button, a)[class*="bg-[#E30613]"] {
+  background: linear-gradient(135deg, var(--legacy-primary) 0%, var(--app-primary-strong) 100%) !important;
+  border-color: var(--legacy-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(227, 6, 19, 0.2) !important;
+}
+
+.legacy-admin-shell :is(button, a)[class*="bg-[#E30613]"]:hover {
+  background: linear-gradient(135deg, var(--app-primary-strong) 0%, #881337 100%) !important;
+  border-color: var(--app-primary-strong) !important;
+}
+
+.legacy-admin-shell :is(button, a)[class*="text-[#E30613]"] {
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .text-blue-600 {
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .bg-blue-50 {
+  background: var(--legacy-primary-soft) !important;
+}
+
+.legacy-admin-shell .bg-blue-100 {
+  background: color-mix(in srgb, var(--legacy-primary) 12%, white) !important;
+}
+
+.legacy-admin-shell .text-blue-500,
+.legacy-admin-shell .text-blue-700,
+.legacy-admin-shell .text-blue-800,
+.legacy-admin-shell .hover\:text-blue-600:hover,
+.legacy-admin-shell .hover\:text-blue-700:hover,
+.legacy-admin-shell .hover\:text-blue-800:hover {
+  color: var(--legacy-primary) !important;
+}
+
+.legacy-admin-shell .border-blue-100,
+.legacy-admin-shell .border-blue-200,
+.legacy-admin-shell .hover\:border-blue-200:hover {
+  border-color: color-mix(in srgb, var(--legacy-primary) 24%, white) !important;
+}
+
+.legacy-admin-shell .hover\:bg-blue-50:hover {
+  background: var(--legacy-primary-soft) !important;
+}
+
+.legacy-admin-shell .bg-blue-500,
+.legacy-admin-shell .bg-blue-600,
+.legacy-admin-shell .hover\:bg-blue-100:hover,
+.legacy-admin-shell .hover\:bg-blue-700:hover {
+  background: linear-gradient(135deg, var(--legacy-primary) 0%, var(--app-primary-strong) 100%) !important;
+  color: #ffffff !important;
+}
+
+.legacy-admin-shell .bg-slate-50 {
+  background: #f8fafc !important;
+}
+
+.legacy-admin-shell .bg-red-50 {
+  background: #e9f2ff !important;
+}
+
+.legacy-admin-shell .text-slate-900 {
+  color: var(--legacy-heading) !important;
+}
+
+.legacy-admin-shell .text-slate-500,
+.legacy-admin-shell .text-slate-400 {
+  color: var(--legacy-muted) !important;
+}
+
+.legacy-admin-shell .shadow-lg,
+.legacy-admin-shell .shadow-md {
+  box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.08) !important;
+}

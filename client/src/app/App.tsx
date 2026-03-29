@@ -1,12 +1,24 @@
+import { useState, useCallback } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
-import { Toaster } from "sonner";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { AuthProvider } from "./admin/context/AuthContext";
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+
+  const handleFinish = useCallback(() => {
+    setLoading(false);
+  }, []);
+
   return (
-    <>
-      <RouterProvider router={router} />
-      <Toaster position="top-right" richColors closeButton />
-    </>
+    <AuthProvider>
+      {loading && <LoadingScreen onFinish={handleFinish} />}
+      <div
+        className={`transition-opacity duration-500 ${loading ? "opacity-0" : "opacity-100"}`}
+      >
+        <RouterProvider router={router} />
+      </div>
+    </AuthProvider>
   );
 }
