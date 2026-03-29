@@ -12,7 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { AuthShell } from "../components/AuthShell";
-import { useAuth, type UserRole } from "../admin/context/AuthContext";
+import { useAuth, type UserRole, type User } from "../admin/context/AuthContext";
 import { getDefaultAdminLanding } from "../admin/config/roleTemplates";
 import praditaBuilding from "@/assets/pradita-building.png";
 
@@ -59,14 +59,50 @@ export function LoginPageUnified() {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleDemoLogin = (role: UserRole) => {
-    login(role);
+    const dummyUser: User = {
+      id: `demo-${role}-999`,
+      name: `Akun Demo ${role}`,
+      email: `demo.${role}@pradita.ac.id`,
+      role: role,
+    };
+
+    login(dummyUser); 
+    
     navigate(getDefaultAdminLanding(role));
   };
 
-  const handleManualSubmit = (e: FormEvent) => {
+  const handleManualSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    login("dosen");
-    navigate(getDefaultAdminLanding("dosen"));
+
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: email, 
+          password: password 
+        }),
+      });
+
+      const dataJson = await response.json();
+      if (response.ok) {
+        const userDataAsli: User = {
+          id: dataJson.data.id.toString(),
+          name: dataJson.data.nama, 
+          email: dataJson.data.email,
+          nidn: dataJson.data.nidn,
+          role: "dosen" as UserRole
+        };
+
+        login(userDataAsli); 
+        navigate(getDefaultAdminLanding("dosen"));
+      }
+    } catch (error) {
+      console.error("Gagal terhubung ke server:", error);
+      alert("Gagal terhubung ke server Backend. Pastikan backend menyala!");
+    }
   };
 
   return (

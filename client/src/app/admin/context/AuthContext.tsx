@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 export type UserRole =
   | "administrator"
@@ -27,17 +27,27 @@ const MOCK_USERS: Record<UserRole, User> = {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (role: UserRole) => void;
+  login: (userData: User) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem("user_data");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  const login = (role: UserRole) => setUser(MOCK_USERS[role]);
-  const logout = () => setUser(null);
+  const login = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("user_data", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user_data");
+  };
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
