@@ -53,6 +53,8 @@ export function LoginPageUnified() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); 
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -87,6 +89,11 @@ export function LoginPageUnified() {
       });
 
       const dataJson = await response.json();
+
+      if(!response.ok){
+        throw new Error(dataJson.message || "Terjadi kesalahan saat login");
+      }
+
       if (response.ok) {
         const userDataAsli: User = {
           id: dataJson.data.id.toString(),
@@ -99,9 +106,11 @@ export function LoginPageUnified() {
         login(userDataAsli); 
         navigate(getDefaultAdminLanding("dosen"));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gagal terhubung ke server:", error);
-      alert("Gagal terhubung ke server Backend.");
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,6 +122,16 @@ export function LoginPageUnified() {
       subtitle="Gunakan satu pintu akses yang sama untuk admin, dosen, reviewer, maupun akses publik sehingga pengalaman visual dan navigasi tetap konsisten."
       asideImage={praditaBuilding}
     >
+      {errorMessage && (
+          <div className="mb-4 flex items-center gap-2 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg" role="alert">
+            {/* Ikon peringatan kecil (kalau kamu pakai lucide-react, bisa pakai <AlertCircle className="w-4 h-4" />) */}
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="font-medium">{errorMessage}</span>
+          </div>
+        )}
+
       {!showManual ? (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-2">
