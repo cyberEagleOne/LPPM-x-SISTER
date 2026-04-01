@@ -156,10 +156,10 @@ export const router = createBrowserRouter([
       { path: "laporan-kegiatan/pkm", element: <DosenKegiatanPage jenisParam="pkm" /> },
       // Laporan Publikasi (Dosen CRUD)
       { path: "laporan-publikasi", Component: DosenPublikasiPage },
-      { path: "laporan-publikasi/artikel", element: <DosenPublikasiPage jenisParam="artikel" /> },
-      { path: "laporan-publikasi/buku", element: <DosenPublikasiPage jenisParam="buku" /> },
-      { path: "laporan-publikasi/ki", element: <DosenPublikasiPage jenisParam="haki" /> },
-      { path: "laporan-publikasi/prototipe", element: <DosenPublikasiPage jenisParam="prototipe" /> },
+      { path: "laporan-publikasi/artikel", element: <DosenPublikasiPage key="artikel" jenisParam="artikel" /> },
+      { path: "laporan-publikasi/buku", element: <DosenPublikasiPage key="buku" jenisParam="buku" /> },
+      { path: "laporan-publikasi/ki", element: <DosenPublikasiPage key="haki" jenisParam="haki" /> },
+      { path: "laporan-publikasi/prototipe", element: <DosenPublikasiPage key="prototipe" jenisParam="prototipe" /> },
       { path: "export", Component: ExportDataPage },
       // Manajemen Konten
       { path: "artikel-admin", Component: ArtikelAdminPage },

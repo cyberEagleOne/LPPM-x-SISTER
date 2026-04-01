@@ -101,7 +101,7 @@ export function LoginPageUnified() {
       }
     } catch (error) {
       console.error("Gagal terhubung ke server:", error);
-      alert("Gagal terhubung ke server Backend. Pastikan backend menyala!");
+      alert("Gagal terhubung ke server Backend.");
     }
   };
 
