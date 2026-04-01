@@ -7,7 +7,6 @@ export class SdmController {
             const query = `SELECT id, nama, nidn, email FROM users`;
             const [rows] = await pool.execute(query);
 
-            // Mengirimkan data ke frontend
             return res.status(200).json({
                 status: 'success',
                 message: 'Berhasil mengambil data dosen',
