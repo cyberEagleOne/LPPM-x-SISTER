@@ -10,13 +10,13 @@ export class AuthController {
             const [rows]: any = await pool.execute(query, [email]);
 
             if (rows.length === 0) {
-                return res.status(404).json({ status: 'error', message: 'Email tidak ditemukan' });
+                return res.status(404).json({ status: 'error', message: 'Email atau password salah' });
             }
 
             const user = rows[0];
 
             if (user.password !== password) {
-                return res.status(401).json({ status: 'error', message: 'Password salah' });
+                return res.status(404).json({ status: 'error', message: 'Email atau Password salah' });
             }
             
             return res.status(200).json({
