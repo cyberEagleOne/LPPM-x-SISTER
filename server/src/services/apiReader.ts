@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { HttpClient } from '../utils/httpClient';
 import { Config } from '../config/apiConfig';
 import { Token } from '../config/models';
 //import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
@@ -34,7 +34,7 @@ export class apiReader {
       }
 
       console.log("Meminta token BARU dari SISTER API...");
-      const response = await axios.post(Config.URL_AUTHORIZE, {
+      const response = await HttpClient.post(Config.URL_AUTHORIZE, {
         username: process.env.SISTER_USERNAME,
         password: process.env.SISTER_PASSWORD,
         id_pengguna: process.env.SISTER_ID_USER
@@ -55,153 +55,65 @@ export class apiReader {
   }
 
   static async testLihatResponseSDM(): Promise<void> {
-    try {
-      const token = await this.getAuthToken();
+    const token = await this.getAuthToken();
 
-      console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
-      const response = await axios.get<any[]>(Config.URL_SDM, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
+    const response = await HttpClient.get(Config.URL_SDM, token)
+    const dataSdm = response.data;
 
-      const dataSdm = response.data;
-
-      console.log("\n========== HASIL RESPONSE SISTER API ==========");
+    console.log("\n========== HASIL RESPONSE SISTER API ==========");
       
-      if (Array.isArray(dataSdm) && dataSdm.length > 0) {
-          console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
-          console.log("\nContoh Struktur Data (Item Pertama):");
-          console.dir(dataSdm[0], { depth: null, colors: true });
-      } else {
-          console.log("Struktur Response Utuh:");
-          console.dir(dataSdm, { depth: null, colors: true });
-      }
-      
-      console.log("===============================================\n");
-
-    } catch (error: any) {
-      console.error("Terjadi kesalahan saat menarik data:", error.response?.data || error.message);
+    if (Array.isArray(dataSdm) && dataSdm.length > 0) {
+        console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
+        console.log("\nContoh Struktur Data (Item Pertama):");
+        console.dir(dataSdm[0], { depth: null, colors: true });
+    } else {
+        console.log("Struktur Response Utuh:");
+        console.dir(dataSdm, { depth: null, colors: true });
     }
+      
+    console.log("===============================================\n");
   }
 
   static async fetchSDM(): Promise<any[]> {
-    try {
-      const token = await this.getAuthToken();
-      const response = await axios.get<any[]>(Config.URL_SDM, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    return await HttpClient.get(Config.URL_SDM, token);
   }
 
   static async fetchListPenelitian(id_sdm: string): Promise<any[]> {
-    try {
-      const token = await this.getAuthToken();
-      const url = `${Config.URL_PENELITIAN}?id_sdm=${id_sdm}`;
-      const response = await axios.get(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    } 
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}?id_sdm=${id_sdm}`;
+    return await HttpClient.get(url, token)
   }
 
   static async fetchDetailPenelitian(id_penelitian: string): Promise<any> {
-    try {
-      const token = await this.getAuthToken();
-      const url = `${Config.URL_PENELITIAN}/${id_penelitian}`;
-      const response = await axios.get(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}/${id_penelitian}`;
+    return await HttpClient.get(url, token);
   }
 
   static async fetchBidangIlmuSDM(id_sdm: string): Promise<any[]> {
-    try {
-      const token = await this.getAuthToken();
-      const url = `${Config.URL_BIDANG_ILMU}/${id_sdm}`;
-      const response = await axios.get(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_BIDANG_ILMU}/${id_sdm}`;
+    return await HttpClient.get(url, token);
   }
 
   static async fetchBidangIlmuPenelitian(id_pn?: string): Promise<any[]> {
-    try{
-      const token = await this.getAuthToken();
-      const url = `${Config.URL_PENELITIAN}/${id_pn}/bidang_ilmu`;
-      const response = await axios.get(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PENELITIAN}/${id_pn}/bidang_ilmu`;
+    return await HttpClient.get(url, token);
   }
 
   static async fetchListPublikasi(id_sdm: string): Promise<any[]> {
-    try{
-        const token = await this.getAuthToken();
-        const url = `${Config.URL_PUBLIKASI}?id_sdm=${id_sdm}`
-        const response = await axios.get(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PUBLIKASI}?id_sdm=${id_sdm}`
+    return await HttpClient.get(url, token);
   }
 
   static async fetchDetailPublikasi(id_publikasi: string): Promise<any> {
-    try{
-        const token = await this.getAuthToken();
-        const url = `${Config.URL_PUBLIKASI}/${id_publikasi}`;
-        const response = await axios.get(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        return []; 
-      }
-      throw error;
-    }
+    const token = await this.getAuthToken();
+    const url = `${Config.URL_PUBLIKASI}/${id_publikasi}`;
+    return await HttpClient.get(url, token);
   }
 }
 
