@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "On Backend", 
+      "type": "shell",
+      "command": "docker compose up -d ; if ($?) { npm run dev }", 
+      "options": {
+        "cwd": "${workspaceFolder}/server" 
+      }
+    },
+    {
+      "label": "Bersihkan Backend",
+      "type": "shell",
+      "command": "npx kill-port 3000 ; if ($?) { docker compose down }",
+      "options": {
+        "cwd": "${workspaceFolder}/server"
+      }
+    },
+    {
+      "label": "On Frontend", 
+      "type": "shell",
+      "command": "npm run dev", 
+      "options": {
+        "cwd": "${workspaceFolder}/client" 
+      }
+    },
+        {
+      "label": "Off Frontend",
+      "type": "shell",
+      "command": "npx kill-port 5173",
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      }
+    }
+    
+  ]
+}
