@@ -40,7 +40,7 @@ export class apiReader {
         id_pengguna: process.env.SISTER_ID_USER
       });
 
-      const tokenBaru = response.data.token;
+      const tokenBaru = response.token;
 
       const queryInsert = "INSERT INTO token (token) VALUES (?)";
       await pool.execute(queryInsert, [tokenBaru]);
@@ -59,7 +59,7 @@ export class apiReader {
 
     console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
     const response = await HttpClient.get(Config.URL_SDM, token)
-    const dataSdm = response.data;
+    const dataSdm = response;
 
     console.log("\n========== HASIL RESPONSE SISTER API ==========");
       
