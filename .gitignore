@@ -9,8 +9,8 @@ lerna-debug.log*
 .nyc_output/
 
 #Docker stuff
-.sql
-.yml
+*.sql
+*.yml
 
 # 5. OS Generated Files
 .DS_Store
@@ -150,7 +150,6 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
-/.vscode/
 
 # yarn v3
 .pnp.*
