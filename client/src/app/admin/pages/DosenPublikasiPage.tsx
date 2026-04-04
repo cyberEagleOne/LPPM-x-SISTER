@@ -3,12 +3,17 @@ import {
   Plus, Search, Eye, Edit, Trash2, Send, CheckCircle,
   ChevronLeft, ChevronRight, RotateCcw, Download, BookOpen, AlertCircle, ExternalLink
 } from "lucide-react";
+import {
+  PublikasiDokumen, 
+  PublikasiPenulis
+} from "../config/models";
 import { PageWrapper } from "../components/PageWrapper";
 import { StatusBadge, type StatusType } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { SkeletonTable } from "../components/SkeletonLoader";
 import { StepperStatus } from "../components/StepperStatus";
+import { useAuth } from "../context/AuthContext";
 
 /* ────────────────── Types ────────────────── */
 
@@ -21,12 +26,18 @@ interface PeriodePublikasi {
   aktif: boolean;
 }
 
+interface ListPublikasi{
+  judul: string;
+  jenis_publikasi: string;
+  tanggal: string;
+}
+
 interface PublikasiItem {
   id: string;
   periodeId: string;
+  jenis_publikasi?: string; 
   jenis: JenisPublikasi;
   judul: string;
-  jenis_publikasi?: string; 
   quartile?: number | "";   
 
   // Artikel
@@ -35,6 +46,11 @@ interface PublikasiItem {
   urlTautan?: string;
   jenisJurnal?: string;
   issn?: string;
+  halaman?: string;
+  edisi?: string;
+  volume?: string;
+  nomor?: string;
+  keterangan?: string;
   // Buku
   penerbit?: string;
   isbn?: string;
@@ -83,19 +99,21 @@ const JENIS_JURNAL_OPTIONS = ["Sinta 1", "Sinta 2", "Sinta 3", "Sinta 4", "Sinta
 const JENIS_HAKI_OPTIONS = ["Hak Cipta", "Paten", "Paten Sederhana", "Merek", "Desain Industri"];
 const JENIS_PROTO_OPTIONS = ["Perangkat Lunak", "Perangkat Keras", "Modul", "Sistem", "Alat"];
 
-const MOCK_PERIODE: PeriodePublikasi[] = [
-  { id: "PP-001", tahun: "2025/2026", semester: "Genap", aktif: true },
-  { id: "PP-002", tahun: "2024/2025", semester: "Ganjil", aktif: false },
-  { id: "PP-003", tahun: "2024/2025", semester: "Genap", aktif: false },
-];
+const NEW_PERIODE: PeriodePublikasi[] = [
+  { id: "2026/2027-Ganjil", tahun: "2026/2027", semester: "Genap", aktif: true },
 
+  { id: "UNKNOWN-PERIODE", tahun: "Tidak Diketahui", semester: "Waktu", aktif: false }
+]; 
+
+
+/*
 const MOCK_PUBLIKASI: PublikasiItem[] = [
   { id: "PUB-001", periodeId: "PP-001", jenis: "artikel", judul: "AI & Education Impact Study", namaJurnal: "Journal of AI Research", urlDoi: "https://doi.org/10.123", jenisJurnal: "Sinta 1", tahunTerbit: "2026", status: "approved", tanggalDibuat: "2026-02-01" },
   { id: "PUB-002", periodeId: "PP-001", jenis: "artikel", judul: "IoT Smart Campus Framework", namaJurnal: "Electronics Journal", urlDoi: "", jenisJurnal: "Scopus Q2", tahunTerbit: "2026", status: "draft", tanggalDibuat: "2026-03-01" },
   { id: "PUB-003", periodeId: "PP-001", jenis: "buku", judul: "Pengantar Kecerdasan Buatan", penerbit: "Gramedia", isbn: "978-602-12345-6", tahunTerbit: "2025", status: "approved", tanggalDibuat: "2025-11-01" },
   { id: "PUB-004", periodeId: "PP-001", jenis: "haki", judul: "Sistem Monitor Kualitas Udara IoT", nomorSertifikat: "EC00202300123", jenisHaki: "Hak Cipta", tahunTerbit: "2026", status: "submitted", tanggalDibuat: "2026-01-15" },
   { id: "PUB-005", periodeId: "PP-002", jenis: "prototipe", judul: "Alat Ukur Kadar Air Tanah Otomatis", namaProto: "Soil Moisture Sensor V1", jenisProto: "Perangkat Keras", urlDokumen: "https://drive.google.com/proto", tahunTerbit: "2025", status: "verified", tanggalDibuat: "2025-08-01" },
-];
+]; */
 
 const generateId = () => `PUB-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 
@@ -133,18 +151,76 @@ const JENIS_COLORS: Record<JenisPublikasi, string> = {
 /* ────────────────── Main Component ────────────────── */
 
 export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi }) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("periode");
   const [selectedPeriode, setSelectedPeriode] = useState<PeriodePublikasi | null>(null);
   const [selectedItem, setSelectedItem] = useState<PublikasiItem | null>(null);
   const [editingItem, setEditingItem] = useState<PublikasiItem | null>(null);
-  const [publikasiList, setPublikasiList] = useState<PublikasiItem[]>(MOCK_PUBLIKASI);
+  const [publikasiList, setPublikasiList] = useState<PublikasiItem[]>([]);
+  const [periodeList, setPeriodeList] = useState<PeriodePublikasi[]>([]);
   const [filterJenis, setFilterJenis] = useState<JenisPublikasi | "semua">(jenisParam || "semua");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showEmptyPeriods, setShowEmptyPeriods] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "danger" as "danger" | "warning" | "success", onConfirm: () => {} });
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const perPage = 8;
+
+  
+
+  const getJenisFromJenisPublikasi = (jp?: string): JenisPublikasi => {
+    const text = (jp || "").toLowerCase();
+
+    if (
+      text.includes("buku") || 
+      text.includes("book") || 
+      text.includes("monograf") || 
+      text.includes("koran") || 
+      text.includes("penelitian")
+    ) {
+      return "buku";
+    }
+
+    if (text.includes("haki") || text.includes("paten") || text.includes("cipta") || text.includes("merek")) {
+      return "haki";
+    }
+    if (text.includes("prototipe") || text.includes("sistem") || text.includes("alat")) {
+      return "prototipe";
+    }
+
+    return "artikel"; 
+  };
+  
+
+  const getPeriodeFromDate = (tanggalString: string) => {
+    if (!tanggalString || tanggalString.toLowerCase() === "unknown") {
+      return "UNKNOWN-PERIODE";
+    }
+
+    const date = new Date(tanggalString);
+    
+    if (isNaN(date.getTime())) {
+      return "UNKNOWN-PERIODE";
+    }
+
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    let tahunAjaran = "";
+    let semester = "";
+
+    if (month >= 8 || month === 1) {
+      semester = "Ganjil";
+      const startYear = month === 1 ? year - 1 : year;
+      tahunAjaran = `${startYear}/${startYear + 1}`;
+    } else {
+      semester = "Genap";
+      tahunAjaran = `${year - 1}/${year}`;
+    }
+
+    return `${tahunAjaran}-${semester}`;
+  };
 
   const emptyForm = (): Omit<PublikasiItem, "id" | "tanggalDibuat" | "status"> => ({
     periodeId: selectedPeriode?.id || "",
@@ -152,20 +228,108 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     jenis_publikasi: "", 
     quartile: "",        
     judul: "",
+    namaJurnal: "",
     urlDoi: "", 
     urlTautan: "",
     jenisJurnal: "",
     issn: "",
+    halaman: "",
+    edisi: "",
+    volume: "",
+    nomor: "",
+    keterangan: "",
     penerbit: "", isbn: "",
     nomorSertifikat: "", jenisHaki: "",
     namaProto: "", jenisProto: "", urlDokumen: "",
     tahunTerbit: String(new Date().getFullYear()),
   });
 
+useEffect(() => {
+    const fetchPublikasi = async () => {
+      try {
+        setLoading(true);
+        if (!user?.id) return;
+
+        const response = await fetch(`http://localhost:3000/api/sdm/publikasi?dosen_id=${user.id}`);
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          // DEBUG 1: CEK DATA MENTAH DARI DATABASE
+          console.group("DEBUGGING PUBLIKASI");
+          console.log("1. Total Data Asli dari Backend:", result.data.length);
+          console.log("   Isi Data Asli:", result.data);
+
+          const dataDenganPeriode = result.data.map((item: any) => {
+            const rawTanggal = item.tanggalDibuat || item.tanggal || "";
+            const isUnknown = !rawTanggal || rawTanggal.toLowerCase() === "unknown";
+
+            return {
+              ...item,
+              id: String(item.id),
+              tanggalDibuat: isUnknown ? "Tidak Diketahui" : rawTanggal, 
+              periodeId: getPeriodeFromDate(rawTanggal), 
+              jenis: getJenisFromJenisPublikasi(item.jenis_publikasi),
+              status: item.status || "approved" 
+            };
+          });
+
+          // DEBUG 2: CEK HASIL MAPPING
+          console.log("2. Data Setelah di-Mapping (Cek periodeId-nya):", dataDenganPeriode);
+
+          const uniquePeriodesMap = new Map<string, PeriodePublikasi>();
+          
+          NEW_PERIODE.forEach(p => uniquePeriodesMap.set(p.id, p));
+          dataDenganPeriode.forEach((item: PublikasiItem) => {
+            const pId = item.periodeId;
+            if (!uniquePeriodesMap.has(pId) && pId !== "UNKNOWN-PERIODE") {
+              const [tahun, semester] = pId.split('-');
+              uniquePeriodesMap.set(pId, { id: pId, tahun, semester, aktif: false });
+            }
+          });
+
+          const dynamicPeriodes = Array.from(uniquePeriodesMap.values());
+          
+          dynamicPeriodes.sort((a, b) => {
+            if (a.id === "UNKNOWN-PERIODE") return 1;
+            if (b.id === "UNKNOWN-PERIODE") return -1;
+            return b.id.localeCompare(a.id);
+          });
+
+          if (dynamicPeriodes.length > 0 && dynamicPeriodes[0].id !== "UNKNOWN-PERIODE") {
+             dynamicPeriodes.forEach(p => p.aktif = false);
+             dynamicPeriodes[0].aktif = true;
+          }
+
+          // DEBUG 3: CEK KOTAK PERIODE
+          console.log("3. Daftar Kotak Periode yang Terbuat:", dynamicPeriodes);
+          console.groupEnd();
+
+          setPeriodeList(dynamicPeriodes);
+          setPublikasiList(dataDenganPeriode);
+          
+        } else {
+          showToast(result.message || "Gagal memuat data", "error");
+        }
+      } catch (error: any) {
+        console.error("Fetch error:", error);
+        showToast(error.message || "Terjadi kesalahan jaringan", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublikasi();
+  }, [user?.id]);
+
   const [formData, setFormData] = useState(emptyForm());
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => { const t = setTimeout(() => setLoading(false), 400); return () => clearTimeout(t); }, []);
+  useEffect(() => { 
+    const t = setTimeout(() => setLoading(false), 400); 
+    return () => clearTimeout(t); 
+  }, 
+  []);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message: msg, type });
@@ -213,7 +377,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   if (viewMode === "detail" && selectedItem) {
     return (
       <PageWrapper title="Detail Publikasi"
-        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi" }, { label: selectedItem.id }]}
+        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel" }, { label: selectedItem.id }]}
         actions={<button onClick={() => setViewMode("list")} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /> Kembali</button>}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-5">
@@ -227,11 +391,11 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                 <StatusBadge status={selectedItem.status} size="md" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-slate-400 mb-0.5">Tahun Terbit</p><p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{selectedItem.tahunTerbit}</p></div>
+                <div><p className="text-xs text-slate-400 mb-0.5">Tahun Terbit</p><p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{selectedItem.tanggalDibuat}</p></div>
                 {selectedItem.jenis === "artikel" && (
                   <>
                     <div><p className="text-xs text-slate-400 mb-0.5">Nama Jurnal</p><p className="text-sm text-slate-800">{selectedItem.namaJurnal || "-"}</p></div>
-                    <div><p className="text-xs text-slate-400 mb-0.5">Jenis Jurnal</p><p className="text-sm text-slate-800">{selectedItem.jenisJurnal || "-"}</p></div>
+                    <div><p className="text-xs text-slate-400 mb-0.5">Jenis Jurnal</p><p className="text-sm text-slate-800">{selectedItem.jenis_publikasi || "-"}</p></div>
                     {selectedItem.urlDoi && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL/DOI</p><a href={selectedItem.urlDoi} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
@@ -286,7 +450,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     return (
       <PageWrapper
         title={editingItem ? "Edit Publikasi" : "Tambah Publikasi"}
-        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi" }, { label: editingItem ? "Edit" : "Buat Baru" }]}
+        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel" }, { label: editingItem ? "Edit" : "Buat Baru" }]}
       >
         <div className="max-w-3xl space-y-5">
           <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -300,13 +464,23 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   type="text" 
                   value={formData.judul} 
                   onChange={(e) => setFormData((p) => ({ ...p, judul: e.target.value }))} 
-                  placeholder="Judul publikasi" 
                   className={inputClass(!!formErrors.judul)} />
                 </FormField>
               </div>
 
               {/* Artikel Fields */}
               {currentJenis === "artikel" && (<>
+              <div className="sm:col-span-2">
+                <FormField label="Nama Jurnal" 
+                required error={formErrors.namaJurnal}>
+                  <input 
+                  type="text" 
+                  value={formData.namaJurnal} 
+                  onChange={(e) => setFormData((p) => ({ ...p, namaJurnal: e.target.value }))} 
+                  className={inputClass(!!formErrors.namaJurnal)} />
+                </FormField>
+              </div>
+
                 <FormField label="Jenis Publikasi" required>
                   <select 
                   value={formData.jenis_publikasi || ""} 
@@ -324,7 +498,6 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   <input type="number" 
                   value={formData.tahunTerbit} 
                   onChange={(e) => setFormData((p) => ({ ...p, tahunTerbit: e.target.value }))} 
-                  placeholder="2026" 
                   className={inputClass(!!formErrors.tahunTerbit)} />
                 </FormField>
                 <FormField 
@@ -359,7 +532,6 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       type="text"
                       value={formData.issn || ""} 
                       onChange={(e) => setFormData((p) => ({...p, issn: e.target.value}))}
-                      placeholder="Masukkan ISSN"
                       disabled={!(formData.jenis_publikasi?.includes("Jurnal") || formData.jenis_publikasi?.includes("Prosiding"))}
                       className={inputClass()}
                     />
@@ -370,10 +542,45 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       type="text"
                       value={formData.isbn || ""}
                       onChange={(e) => setFormData((p) => ({...p, isbn: e.target.value}))}
-                      placeholder="Masukkan ISBN"
                       disabled={!(formData.jenis_publikasi?.includes("Prosiding"))}
                       className={inputClass()}
                     />
+                  </FormField>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:col-span-2">
+                  <FormField label="Halaman" 
+                  required error={formErrors.halaman}>
+                    <input 
+                    type="text" 
+                    value={formData.halaman} 
+                    onChange={(e) => setFormData((p) => ({ ...p, halaman: e.target.value }))} 
+                    className={inputClass(!!formErrors.halaman)} />
+                  </FormField>
+                  <FormField label="Edisi" 
+                  required error={formErrors.edisi}>
+                    <input 
+                    type="text" 
+                    value={formData.edisi} 
+                    onChange={(e) => setFormData((p) => ({ ...p, edisi: e.target.value }))} 
+                    className={inputClass(!!formErrors.edisi)} />
+                  </FormField>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:col-span-2">
+                  <FormField label="Volume" 
+                  required error={formErrors.volume}>
+                    <input 
+                    type="text" 
+                    value={formData.volume} 
+                    onChange={(e) => setFormData((p) => ({ ...p, volume: e.target.value }))} 
+                    className={inputClass(!!formErrors.volume)} />
+                  </FormField>
+                  <FormField label="Nomor" 
+                  required error={formErrors.nomor}>
+                    <input 
+                    type="text" 
+                    value={formData.nomor} 
+                    onChange={(e) => setFormData((p) => ({ ...p, nomor: e.target.value }))} 
+                    className={inputClass(!!formErrors.nomor)} />
                   </FormField>
                 </div>
                 <div className="sm:col-span-2">
@@ -382,7 +589,6 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     type="url" 
                     value={formData.urlTautan || ""} 
                     onChange={(e) => setFormData((p) => ({ ...p, urlTautan: e.target.value }))} 
-                    placeholder="https://scholar.google.com/..." 
                     className={inputClass()} />
                   </FormField>
                 </div>
@@ -405,17 +611,29 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               {/* HaKI Fields */}
               {currentJenis === "haki" && (<>
                 <FormField label="Jenis HaKI">
-                  <select value={formData.jenisHaki || ""} onChange={(e) => setFormData((p) => ({ ...p, jenisHaki: e.target.value }))} className={inputClass()}>
+                  <select value={formData.jenisHaki || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, jenisHaki: e.target.value }))} 
+                  className={inputClass()}>
                     <option value="">Pilih...</option>
                     {JENIS_HAKI_OPTIONS.map((j) => <option key={j} value={j}>{j}</option>)}
                   </select>
                 </FormField>
-                <FormField label="Nomor Sertifikat"><input type="text" value={formData.nomorSertifikat || ""} onChange={(e) => setFormData((p) => ({ ...p, nomorSertifikat: e.target.value }))} placeholder="EC00202300123" className={inputClass()} /></FormField>
+                <FormField label="Nomor Sertifikat">
+                  <input type="text" 
+                  value={formData.nomorSertifikat || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, nomorSertifikat: e.target.value }))} 
+                  className={inputClass()} />
+                  </FormField>
               </>)}
 
               {/* Prototipe Fields */}
               {currentJenis === "prototipe" && (<>
-                <FormField label="Nama Prototipe"><input type="text" value={formData.namaProto || ""} onChange={(e) => setFormData((p) => ({ ...p, namaProto: e.target.value }))} placeholder="Nama prototipe" className={inputClass()} /></FormField>
+                <FormField label="Nama Prototipe">
+                  <input type="text" 
+                  value={formData.namaProto || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, namaProto: e.target.value }))} 
+                  className={inputClass()} />
+                  </FormField>
                 <FormField label="Jenis Prototipe">
                   <select value={formData.jenisProto || ""} onChange={(e) => setFormData((p) => ({ ...p, jenisProto: e.target.value }))} className={inputClass()}>
                     <option value="">Pilih...</option>
@@ -426,7 +644,9 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               </>)}
               <div className="sm:col-span-2">
                 <FormField label="Tautan">
-                  <input type="url" value={formData.urlDoi || ""} onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} placeholder="https://scholar.google.com/..." className={inputClass()} />
+                  <input type="url" value={formData.urlDoi || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
+                  className={inputClass()} />
                 </FormField>
               </div>
             </div>
@@ -447,7 +667,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     return (
       <PageWrapper
         title={`Publikasi — ${selectedPeriode.tahun} (${selectedPeriode.semester})`}
-        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi" }, { label: selectedPeriode.tahun }]}
+        breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel" }, { label: selectedPeriode.tahun }]}
         actions={
           <div className="flex gap-2">
             <button onClick={() => setViewMode("periode")} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /> Periode</button>
@@ -473,22 +693,45 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead><tr className="border-b border-slate-100">
-                      {["ID", "Judul", "Jenis", "Tahun", "Status", "Aksi"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-left text-xs text-slate-500 whitespace-nowrap" style={{ fontWeight: 600 }}>{h}</th>
-                      ))}
-                    </tr></thead>
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        {["Tanggal", "Judul", "Jenis", "Status", "Aksi"].map((h) => (
+                          <th key={h} className="px-5 py-3 text-left text-xs text-slate-500 whitespace-nowrap" style={{ fontWeight: 600 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
                     <tbody className="divide-y divide-slate-50">
                       {paginated.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50/50">
-                          <td className="px-5 py-3 text-sm text-slate-500">{item.id}</td>
-                          <td className="px-5 py-3">
-                            <button onClick={() => { setSelectedItem(item); setViewMode("detail"); }} className="text-sm text-slate-800 hover:text-[#E30613] text-left max-w-[250px] truncate block" style={{ fontWeight: 500 }}>{item.judul}</button>
-                            {item.jenis === "artikel" && item.namaJurnal && <p className="text-xs text-slate-400 mt-0.5 truncate">{item.namaJurnal}</p>}
+                          
+                          {/* Kolom Tanggal*/}
+                          <td className="px-5 py-3 text-sm text-slate-500 whitespace-nowrap">
+                            {item.tanggalDibuat}
                           </td>
-                          <td className="px-5 py-3"><span className={`text-xs px-2.5 py-0.5 rounded-full ${JENIS_COLORS[item.jenis]}`} style={{ fontWeight: 600 }}>{JENIS_LABELS[item.jenis]}</span></td>
-                          <td className="px-5 py-3 text-sm text-slate-600">{item.tahunTerbit}</td>
-                          <td className="px-5 py-3"><StatusBadge status={item.status} /></td>
+
+                          {/* Kolom Judul */}
+                          <td className="px-5 py-3">
+                            <button onClick={() => { setSelectedItem(item); setViewMode("detail"); }} className="text-sm text-slate-800 hover:text-[#E30613] text-left max-w-[250px] truncate block" style={{ fontWeight: 500 }}>
+                              {item.judul}
+                            </button>
+                            {item.jenis === "artikel" && item.namaJurnal && (
+                              <p className="text-xs text-slate-400 mt-0.5 truncate">{item.namaJurnal}</p>
+                            )}
+                          </td>
+
+                          {/* Kolom Jenis */}
+                          <td className="px-5 py-3">
+                            <span className={`text-xs px-2.5 py-0.5 rounded-full ${JENIS_COLORS[item.jenis]}`} style={{ fontWeight: 600 }}>
+                              {JENIS_LABELS[item.jenis]}
+                            </span>
+                          </td>
+
+                          {/* Kolom Status */}
+                          <td className="px-5 py-3">
+                            <StatusBadge status={item.status} />
+                          </td>
+
+                          {/* Kolom Aksi */}
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-1">
                               <button onClick={() => { setSelectedItem(item); setViewMode("detail"); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
@@ -523,12 +766,32 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
 
   /* ═══════════ VIEW: PERIODE ═══════════ */
   const jenisTitle = jenisParam ? JENIS_LABELS[jenisParam] : "Semua Publikasi";
+  const visiblePeriods = periodeList.filter((p) => {
+    const count = publikasiList.filter((pub) => pub.periodeId === p.id && (jenisParam ? pub.jenis === jenisParam : true)).length;
+    const isHardcoded = NEW_PERIODE.some(np => np.id === p.id);
+    return showEmptyPeriods || count > 0 || isHardcoded;
+  });
   return (
     <PageWrapper title={`Laporan Publikasi — ${jenisTitle}`} subtitle="Pilih periode untuk melihat atau menambah publikasi"
-      breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi"}, { label: jenisTitle }]}>
+      breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel"}, { label: jenisTitle }]}
+      actions={
+        <button 
+          onClick={() => setShowEmptyPeriods(!showEmptyPeriods)}
+          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition-all ${
+            showEmptyPeriods 
+              ? "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200" 
+              : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+          }`}
+          style={{ fontWeight: 500 }}
+        >
+          <Eye className="w-4 h-4" /> 
+          {showEmptyPeriods ? "Sembunyikan yang Kosong" : "Tampilkan Semua"}
+        </button>
+      }
+      >
       {loading ? <SkeletonTable rows={4} /> : (
         <div className="space-y-3">
-          {MOCK_PERIODE.map((p) => {
+          {visiblePeriods.map((p) => {
             const count = publikasiList.filter((pub) => pub.periodeId === p.id && (jenisParam ? pub.jenis === jenisParam : true)).length;
             return (
               <div key={p.id} onClick={() => { setSelectedPeriode(p); setViewMode("list"); setCurrentPage(1); setSearchQuery(""); }}

@@ -1,19 +1,10 @@
-import { RowDataPacket } from 'mysql2';
-
-export interface Token extends RowDataPacket{
-  id: any;
-  token: string;
-  timestamp: any;
-}
-
+// Copied models from server
 export interface SdmResponse {
   id_sdm?: string;
   nama_sdm?: string;
   nidn?: string;
   [key: string]: any;
 }
-
-/* VV - UNUSED - VV */
 
 export interface Penelitian{
   id: string;
