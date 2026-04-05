@@ -26,10 +26,11 @@ interface PeriodePublikasi {
   aktif: boolean;
 }
 
-interface ListPublikasi{
-  judul: string;
-  jenis_publikasi: string;
-  tanggal: string;
+export interface PenulisTambahan {
+  id: string;
+  nama: string;
+  afiliasi: string;
+  urutan: number | "";
 }
 
 interface PublikasiItem {
@@ -62,9 +63,12 @@ interface PublikasiItem {
   jenisProto?: string;
   urlDokumen?: string;
   // Common
-  tahunTerbit: string;
+  tanggal: string;
   status: StatusType;
   tanggalDibuat: string;
+  urutanPenulis: number | "";
+  penulisDosen: PenulisTambahan[];
+  penulisMahasiswa: PenulisTambahan[];
 }
 
 type ViewMode = "periode" | "list" | "form" | "detail";
@@ -100,7 +104,7 @@ const JENIS_HAKI_OPTIONS = ["Hak Cipta", "Paten", "Paten Sederhana", "Merek", "D
 const JENIS_PROTO_OPTIONS = ["Perangkat Lunak", "Perangkat Keras", "Modul", "Sistem", "Alat"];
 
 const NEW_PERIODE: PeriodePublikasi[] = [
-  { id: "2026/2027-Ganjil", tahun: "2026/2027", semester: "Genap", aktif: true },
+  { id: "2025/2026-Genap", tahun: "2025/2026", semester: "Genap", aktif: true },
 
   { id: "UNKNOWN-PERIODE", tahun: "Tidak Diketahui", semester: "Waktu", aktif: false }
 ]; 
@@ -114,8 +118,6 @@ const MOCK_PUBLIKASI: PublikasiItem[] = [
   { id: "PUB-004", periodeId: "PP-001", jenis: "haki", judul: "Sistem Monitor Kualitas Udara IoT", nomorSertifikat: "EC00202300123", jenisHaki: "Hak Cipta", tahunTerbit: "2026", status: "submitted", tanggalDibuat: "2026-01-15" },
   { id: "PUB-005", periodeId: "PP-002", jenis: "prototipe", judul: "Alat Ukur Kadar Air Tanah Otomatis", namaProto: "Soil Moisture Sensor V1", jenisProto: "Perangkat Keras", urlDokumen: "https://drive.google.com/proto", tahunTerbit: "2025", status: "verified", tanggalDibuat: "2025-08-01" },
 ]; */
-
-const generateId = () => `PUB-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 
 /* ────────────────── Labels ────────────────── */
 
@@ -222,6 +224,20 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     return `${tahunAjaran}-${semester}`;
   };
 
+  const formatTanggalIndo = (tanggalString: string) => {
+    if (!tanggalString || tanggalString.toLowerCase() === "unknown") return "Tidak Diketahui";
+    if (/^\d{4}$/.test(tanggalString)) return tanggalString;  
+    
+    const date = new Date(tanggalString);
+    if (isNaN(date.getTime())) return tanggalString; 
+
+    return new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(date);
+  };
+
   const emptyForm = (): Omit<PublikasiItem, "id" | "tanggalDibuat" | "status"> => ({
     periodeId: selectedPeriode?.id || "",
     jenis: jenisParam || "artikel",
@@ -241,10 +257,11 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     penerbit: "", isbn: "",
     nomorSertifikat: "", jenisHaki: "",
     namaProto: "", jenisProto: "", urlDokumen: "",
-    tahunTerbit: String(new Date().getFullYear()),
+    tanggal: new Date().toISOString().split("T")[0],
+    urutanPenulis: "",
+    penulisDosen: [],
+    penulisMahasiswa: []
   });
-
-useEffect(() => {
     const fetchPublikasi = async () => {
       try {
         setLoading(true);
@@ -267,10 +284,12 @@ useEffect(() => {
             return {
               ...item,
               id: String(item.id),
-              tanggalDibuat: isUnknown ? "Tidak Diketahui" : rawTanggal, 
+              
+              tanggal: rawTanggal,
+              
+              tanggalDibuat: isUnknown ? "Tidak Diketahui" : formatTanggalIndo(rawTanggal), 
               periodeId: getPeriodeFromDate(rawTanggal), 
               jenis: getJenisFromJenisPublikasi(item.jenis_publikasi),
-              status: item.status || "approved" 
             };
           });
 
@@ -319,11 +338,40 @@ useEffect(() => {
       }
     };
 
+
+  useEffect(() => {
     fetchPublikasi();
   }, [user?.id]);
 
   const [formData, setFormData] = useState(emptyForm());
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const handleAddPenulis = (tipe: "dosen" | "mahasiswa") => {
+    const field = tipe === "dosen" ? "penulisDosen" : "penulisMahasiswa";
+    setFormData((prev) => ({
+      ...prev,
+      [field]: [
+        ...prev[field], 
+        { id: Math.random().toString(36).substr(2, 9), nama: "", afiliasi: "", urutan: "" }
+      ]
+    }));
+  };
+
+  const handleUpdatePenulis = (tipe: "dosen" | "mahasiswa", id: string, key: keyof PenulisTambahan, value: string | number) => {
+    const field = tipe === "dosen" ? "penulisDosen" : "penulisMahasiswa";
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].map((item) => item.id === id ? { ...item, [key]: value } : item)
+    }));
+  };
+
+  const handleRemovePenulis = (tipe: "dosen" | "mahasiswa", id: string) => {
+    const field = tipe === "dosen" ? "penulisDosen" : "penulisMahasiswa";
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((item) => item.id !== id)
+    }));
+  };
 
   useEffect(() => { 
     const t = setTimeout(() => setLoading(false), 400); 
@@ -336,32 +384,91 @@ useEffect(() => {
     setTimeout(() => setToast((p) => ({ ...p, show: false })), 3000);
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (asSubmit: boolean): boolean => {
     const errors: Record<string, string> = {};
     if (!formData.judul.trim()) errors.judul = "Judul wajib diisi";
-    if (!formData.tahunTerbit) errors.tahunTerbit = "Tahun terbit wajib diisi";
-    if (formData.jenis === "artikel" && !formData.jenisJurnal) errors.jenisJurnal = "Jenis jurnal wajib dipilih";
+
+    if (asSubmit) {
+      if (!formData.tanggal) errors.tanggal = "Tanggal terbit wajib diisi";
+      if (formData.jenis === "artikel" && !formData.jenisJurnal) errors.jenisJurnal = "Jenis jurnal wajib dipilih";
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSave = (asSubmit: boolean) => {
-    if (!validateForm()) { showToast("Lengkapi field yang wajib diisi", "error"); return; }
-    if (editingItem) {
-      setPublikasiList((prev) => prev.map((p) => p.id === editingItem.id ? { ...p, ...formData, status: asSubmit ? "submitted" : p.status } : p));
-      showToast(asSubmit ? "Berhasil disubmit" : "Draft disimpan");
-    } else {
-      const newItem: PublikasiItem = { ...formData, id: generateId(), status: asSubmit ? "submitted" : "draft", tanggalDibuat: new Date().toISOString().split("T")[0] };
-      setPublikasiList((prev) => [newItem, ...prev]);
-      showToast(asSubmit ? "Publikasi berhasil disubmit" : "Draft disimpan");
+  const handleSave = async (asSubmit: boolean) => {
+    if (!validateForm(asSubmit)) { 
+      showToast(asSubmit ? "Lengkapi field yang wajib diisi" : "Judul wajib diisi untuk menyimpan draft", "error"); 
+      return; 
     }
-    setEditingItem(null);
-    setViewMode("list");
+
+    let cleanQuartile = null;
+    if (formData.quartile) {
+        const numberOnly = String(formData.quartile).replace(/\D/g, "");
+        cleanQuartile = numberOnly ? parseInt(numberOnly, 10) : null;
+    }
+
+    const newStatus = asSubmit ? "submitted" : "draft";
+    const payload = {
+        ...formData,
+        id_user: user?.id,
+        status: newStatus,
+        quartile: cleanQuartile
+    };
+
+    try {
+        setLoading(true);
+        const url = editingItem 
+            ? `http://localhost:3000/api/sdm/publikasi/${editingItem.id}` 
+            : `http://localhost:3000/api/sdm/publikasi`;
+        const method = editingItem ? "PUT" : "POST";
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            showToast(asSubmit ? "Publikasi berhasil disubmit" : "Draft berhasil disimpan");
+
+            await fetchPublikasi(); 
+            
+            setEditingItem(null);
+            setViewMode("list");
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error: any) {
+        showToast(error.message || "Gagal menyimpan data", "error");
+    } finally {
+        setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setPublikasiList((prev) => prev.filter((p) => p.id !== id));
-    showToast("Publikasi dihapus");
+  const handleDelete = async (id: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:3000/api/sdm/publikasi/${id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        showToast("Publikasi berhasil dihapus");
+        await fetchPublikasi();
+        if (viewMode === "detail") setViewMode("list");
+      } else {
+        showToast(data.message || "Gagal menghapus", "error");
+      }
+    } catch (error) {
+      showToast("Terjadi kesalahan jaringan", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const periodeFiltered = publikasiList.filter((p) => p.periodeId === selectedPeriode?.id);
@@ -493,12 +600,12 @@ useEffect(() => {
                   </select>
                 </FormField>
                 <FormField 
-                label="Tahun Terbit" 
-                required error={formErrors.tahunTerbit}>
-                  <input type="number" 
-                  value={formData.tahunTerbit} 
-                  onChange={(e) => setFormData((p) => ({ ...p, tahunTerbit: e.target.value }))} 
-                  className={inputClass(!!formErrors.tahunTerbit)} />
+                  label="Tanggal Publikasi" 
+                  required error={formErrors.tanggal}>
+                    <input type="date" 
+                    value={formData.tanggal} 
+                    onChange={(e) => setFormData((p) => ({ ...p, tanggal: e.target.value }))} 
+                    className={inputClass(!!formErrors.tanggal)} />
                 </FormField>
                 <FormField 
                   label={
@@ -592,6 +699,65 @@ useEffect(() => {
                     className={inputClass()} />
                   </FormField>
                 </div>
+                <div className="sm:col-span-2">
+                  <FormField label="Tautan">
+                    <input type="url" value={formData.urlDoi || ""} 
+                    onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
+                    className={inputClass()} />
+                  </FormField>
+                </div>
+                {/* ════════════ BLOK DATA PENULIS ════════════ */}
+                <div className="sm:col-span-2 mt-6 pt-6 border-t border-slate-200 space-y-6">
+                  <h3 className="text-sm text-slate-900" style={{ fontWeight: 600 }}>Tim Penulis</h3>
+                  
+                  {/* 1. Urutan Penulis Utama (Dosen Login) */}
+                  <div className="w-full sm:w-1/2">
+                    <FormField label="Urutan Anda sebagai Penulis" required>
+                      <input type="number" min="1" value={formData.urutanPenulis} onChange={(e) => setFormData(p => ({ ...p, urutanPenulis: parseInt(e.target.value) || "" }))} className={inputClass()} />
+                    </FormField>
+                  </div>
+
+                  {/* 2. Penulis Dosen Lainnya */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm text-slate-700" style={{ fontWeight: 500 }}>Penulis Dosen Lainnya</label>
+                      <button 
+                      onClick={() => handleAddPenulis("dosen")} 
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100" 
+                      style={{ fontWeight: 500 }}><Plus className="w-3.5 h-3.5" /> Tambah Dosen</button>
+                    </div>
+                    {formData.penulisDosen.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada dosen lain yang ditambahkan.</p>}
+                    
+                    {formData.penulisDosen.map((item, index) => (
+                      <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div className="sm:col-span-4"><input type="text" placeholder="Nama Dosen" value={item.nama} onChange={(e) => handleUpdatePenulis("dosen", item.id, "nama", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi (Contoh: Univ. A)" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("dosen", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-2"><input type="number" placeholder="Urutan" value={item.urutan} onChange={(e) => handleUpdatePenulis("dosen", item.id, "urutan", parseInt(e.target.value) || "")} className={inputClass()} /></div>
+                        <div className="sm:col-span-1 flex justify-end"><button onClick={() => handleRemovePenulis("dosen", item.id)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 3. Penulis Mahasiswa */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm text-slate-700" style={{ fontWeight: 500 }}>Penulis Mahasiswa</label>
+                      <button onClick={() => handleAddPenulis("mahasiswa")} 
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100" 
+                      style={{ fontWeight: 500 }}><Plus className="w-3.5 h-3.5" /> Tambah Mahasiswa</button>
+                    </div>
+                    {formData.penulisMahasiswa.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada mahasiswa yang ditambahkan.</p>}
+                    
+                    {formData.penulisMahasiswa.map((item, index) => (
+                      <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div className="sm:col-span-4"><input type="text" placeholder="Nama Mahasiswa" value={item.nama} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "nama", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi / NIM" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-2"><input type="number" placeholder="Urutan" value={item.urutan} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "urutan", parseInt(e.target.value) || "")} className={inputClass()} /></div>
+                        <div className="sm:col-span-1 flex justify-end"><button onClick={() => handleRemovePenulis("mahasiswa", item.id)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>)}
 
               {/* Buku Fields */}
@@ -606,6 +772,13 @@ useEffect(() => {
 
                 <FormField label="Penerbit"><input type="text" value={formData.penerbit || ""} onChange={(e) => setFormData((p) => ({ ...p, penerbit: e.target.value }))} placeholder="Nama penerbit" className={inputClass()} /></FormField>
                 <FormField label="ISBN"><input type="text" value={formData.isbn || ""} onChange={(e) => setFormData((p) => ({ ...p, isbn: e.target.value }))} placeholder="978-xxx-xxx" className={inputClass()} /></FormField>
+                <div className="sm:col-span-2">
+                  <FormField label="Tautan">
+                    <input type="url" value={formData.urlDoi || ""} 
+                    onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
+                    className={inputClass()} />
+                  </FormField>
+                </div>
               </>)}
 
               {/* HaKI Fields */}
@@ -642,13 +815,6 @@ useEffect(() => {
                 </FormField>
                 <div className="sm:col-span-2"><FormField label="URL Dokumen"><input type="url" value={formData.urlDokumen || ""} onChange={(e) => setFormData((p) => ({ ...p, urlDokumen: e.target.value }))} placeholder="https://drive.google.com/..." className={inputClass()} /></FormField></div>
               </>)}
-              <div className="sm:col-span-2">
-                <FormField label="Tautan">
-                  <input type="url" value={formData.urlDoi || ""} 
-                  onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
-                  className={inputClass()} />
-                </FormField>
-              </div>
             </div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-3 flex-wrap">

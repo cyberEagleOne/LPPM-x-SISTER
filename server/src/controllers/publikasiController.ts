@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import pool from "../config/database";
+import { v4 as uuidv4 } from "uuid";
 
 export class PublikasiController {
+    // --- Fungsi Lihat Data (GET) ---
     static async getListPublikasi(req: Request, res: Response) {
         try {
             // /publikasi?dosen_id=...
@@ -13,8 +15,8 @@ export class PublikasiController {
                     message: 'Parameter dosen_id diperlukan.' 
                 });
             }
-            const query = `SELECT dp.id, dp.judul, dp.quartile, dp.jenis_publikasi, dp.tanggal AS tanggalDibuat, dp.penerbit, dp.isbn, dp.tautan AS urlTautan, dp.keterangan, dp.nama_jurnal AS namaJurnal, dp.halaman, dp.edisi, dp.nomor, dp.doi AS urlDoi, dp.issn FROM detail_publikasi dp
-JOIN publikasi p ON dp.id_publikasi = p.id
+            const query = `SELECT dp.id, dp.judul, dp.quartile, dp.jenis_publikasi, dp.tanggal, dp.penerbit, dp.isbn, dp.tautan AS urlTautan, dp.keterangan, dp.nama_jurnal AS namaJurnal, dp.halaman, dp.edisi, dp.nomor, dp.doi AS urlDoi, dp.issn, dp.status FROM detail_publikasi dp
+JOIN publikasi p ON dp.id = p.id
 WHERE p.id_user = ?`;
             
             const [rows]: any = await pool.execute(query, [dosen_id]);
@@ -38,6 +40,151 @@ WHERE p.id_user = ?`;
                 status: 'error', 
                 message: 'Gagal mengambil data dari database' 
             });
+        }
+    }
+    // --- Fungsi Tambah Data (POST) ---
+    static async createPublikasi(req: Request, res: Response) {
+        const connection = await pool.getConnection(); 
+        try {
+            await connection.beginTransaction(); 
+
+            const data = req.body;
+
+            const sharedId = uuidv4(); 
+
+            const queryHeader = `
+                INSERT INTO publikasi (id, kategori_kegiatan, quartile, judul, jenis_publikasi, tanggal, id_user) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
+            await connection.execute(queryHeader, [
+                sharedId, 
+                data.kategori_kegiatan || "Test", 
+                data.quartile,
+                data.judul, 
+                data.jenis_publikasi, 
+                data.tanggal, 
+                data.id_user
+            ]);
+
+
+            const queryDetail = `
+                INSERT INTO detail_publikasi (
+                    id, kategori_kegiatan, judul, jenis_publikasi, tanggal, id_kategori_kegiatan, id_jenis_publikasi, kategori_capaian_luaran,
+                    penerbit, isbn, nama_jurnal, doi, issn, volume, nomor, halaman, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            await connection.execute(queryDetail, [
+                sharedId,
+                data.kategori_kegiatan || "Test",
+                data.judul,
+                data.jenis_publikasi,
+                data.tanggal,
+                data.id_kategori_kegiatan || 1,
+                data.id_jenis_publikasi || 1,
+                data.kategori_capaian_luaran || "Test",
+                data.penerbit || null,
+                data.isbn || null,
+                data.nama_jurnal || null,
+                data.urlDoi || null,
+                data.issn || null,
+                data.volume || null,
+                data.nomor || null,
+                data.halaman || null,
+                data.status
+            ]);
+
+            
+
+            await connection.commit(); 
+            return res.status(201).json({ status: 'success', message: 'Data berhasil disimpan' });
+
+        } catch (error: any) {
+            await connection.rollback(); 
+            console.error("Transaction Error:", error);
+            return res.status(500).json({ status: 'error', message: 'Gagal memproses data' });
+        } finally {
+            connection.release(); 
+        }
+    }
+
+    // --- Fungsi Update Data (PUT) ---
+    static async updatePublikasi(req: Request, res: Response) {
+        try {
+            // /publikasi/:id
+            const idPublikasi = req.params.id; 
+            const data = req.body;
+            const query = `
+                UPDATE detail_publikasi SET 
+                judul = ?, jenis_publikasi = ?, tanggal = ?, penerbit = ?, isbn = ?, tautan = ?, 
+                keterangan = ?, nama_jurnal = ?, halaman = ?, edisi = ?, nomor = ?, doi = ?, issn = ?, quartile = ?
+                WHERE id = ?
+            `;
+            const params = [
+                data.judul, data.jenis_publikasi, data.tanggal, data.penerbit || null, data.isbn || null, data.urlTautan || null, 
+                data.keterangan || null, data.namaJurnal || null, data.halaman || null, data.edisi || null, data.nomor || null, 
+                data.urlDoi || null, data.issn || null, data.quartile || null, 
+                idPublikasi 
+            ];
+            
+            await pool.execute(query, params);
+
+            if (data.status) {
+                await pool.execute(
+                    `UPDATE publikasi SET status = ? WHERE id = ?`, 
+                    [data.status, idPublikasi] 
+                );
+            }
+
+            
+
+            return res.status(200).json({ status: 'success', message: 'Data berhasil diubah' });
+        } catch (error) {
+            console.error("Error Update Publikasi:", error);
+            return res.status(500).json({ status: 'error', message: 'Gagal mengubah data' });
+        }
+    }
+    // --- Fungsi Delete Data (DELETE) ---
+    static async deletePublikasi(req: Request, res: Response) {
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const { id } = req.params;
+
+            const [rows]: any = await connection.execute(
+                'SELECT dp.status FROM publikasi p JOIN detail_publikasi dp ON p.id = dp.id WHERE p.id = ?', 
+                [id]
+            );
+
+            if (rows.length === 0) {
+                await connection.rollback();
+                return res.status(404).json({ status: 'error', message: 'Data tidak ditemukan' });
+            }
+
+            if (rows[0].status?.toLowerCase() === 'approved') {
+                await connection.rollback();
+                return res.status(403).json({ 
+                    status: 'error', 
+                    message: 'Data yang sudah Approved tidak dapat dihapus.' 
+                });
+            }
+            await connection.execute('DELETE FROM detail_publikasi WHERE id = ?', [id]);
+
+            const [result]: any = await connection.execute('DELETE FROM publikasi WHERE id = ?', [id]);
+
+            if (result.affectedRows === 0) {
+                throw new Error("Gagal menghapus data utama");
+            }
+
+            await connection.commit();
+            return res.json({ status: 'success', message: 'Publikasi berhasil dihapus' });
+
+        } catch (error: any) {
+            await connection.rollback();
+            console.error("Delete Error:", error);
+            return res.status(500).json({ status: 'error', message: 'Gagal menghapus data' });
+        } finally {
+            connection.release();
         }
     }
 }

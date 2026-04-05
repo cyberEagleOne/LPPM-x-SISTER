@@ -218,7 +218,7 @@ export class syncToDB {
         }
     }
 
-    static async syncPublikasiEachSDM(): Promise<void> {
+static async syncPublikasiEachSDM(): Promise<void> {
         try {
             console.log("Menarik data SDM dari SISTER untuk sinkronisasi Publikasi...");
             const dataSDM = await apiReader.fetchSDM();
@@ -248,8 +248,7 @@ export class syncToDB {
                 for (const pub of listPublikasi) {
                     const idPublikasi = pub.id || pub.id_publikasi;
                     if (!idPublikasi) continue;
-
-                    if(!pub) continue;
+                    if (!pub) continue;
 
                     const queryPublikasi = `
                         INSERT INTO publikasi (
@@ -272,8 +271,6 @@ export class syncToDB {
                     const detail = await apiReader.fetchDetailPublikasi(idPublikasi);
 
                     if (detail) {
-                        const idDetail = detail.id || idPublikasi;
-
                         const queryDetail = `
                             INSERT INTO detail_publikasi (
                                 id, kategori_kegiatan, judul, quartile, jenis_publikasi, tanggal, 
@@ -281,14 +278,14 @@ export class syncToDB {
                                 id_kategori_capaian_luaran, judul_litabmas, id_litabmas, nomor_paten, 
                                 pemberi_paten, penerbit, isbn, jumlah_halaman, tautan, keterangan, 
                                 judul_artikel, judul_asli, nama_jurnal, halaman, edisi, volume, nomor, 
-                                doi, issn, e_issn, seminar, prosiding, asal_data, id_publikasi
+                                doi, issn, e_issn, seminar, prosiding, asal_data, status
                             ) VALUES (
                                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                             ) ON DUPLICATE KEY UPDATE 
                                 judul = VALUES(judul)
                         `;
                         await pool.execute(queryDetail, [
-                            idDetail,
+                            idPublikasi,
                             detail.kategori_kegiatan || pub.kategori_kegiatan || "Unknown",
                             detail.judul || pub.judul || "Tanpa Judul",
                             detail.quartile || pub.quartile || null,
@@ -320,7 +317,7 @@ export class syncToDB {
                             detail.seminar ? 1 : 0, 
                             detail.prosiding ? 1 : 0, 
                             detail.asal_data || pub.asal_data || null,
-                            idPublikasi 
+                            "Approved"
                         ]);
 
                         if (detail.penulis && Array.isArray(detail.penulis)) {
@@ -335,7 +332,7 @@ export class syncToDB {
                                         nama = VALUES(nama), urutan = VALUES(urutan)
                                 `;
                                 await pool.execute(queryPenulis, [
-                                    idDetail, 
+                                    idPublikasi,
                                     penulis.nama || "Unknown",
                                     penulis.jenis || "Dosen", 
                                     penulis.id_sdm || null,
@@ -350,7 +347,6 @@ export class syncToDB {
                             }
                         }
 
-                        
                         if (detail.dokumen && Array.isArray(detail.dokumen)) {
                             for (const dok of detail.dokumen) {
                                 const queryDokumen = `
@@ -363,7 +359,7 @@ export class syncToDB {
                                 `;
                                 await pool.execute(queryDokumen, [
                                     dok.id || null, 
-                                    idDetail, 
+                                    idPublikasi,
                                     dok.nama || "Unknown",
                                     dok.jenis_dokumen || "Unknown",
                                     dok.nama_file || "Unknown",
