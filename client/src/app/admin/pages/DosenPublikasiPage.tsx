@@ -26,6 +26,15 @@ interface PeriodePublikasi {
   aktif: boolean;
 }
 
+export interface RiwayatAktivitas {
+  id: string;
+  tanggal: string; 
+  status: string;
+  aktor: string;
+  peran: string; // Contoh: "Dosen", "Reviewer", "Admin LPPM"
+  catatan?: string | null;
+}
+
 export interface PenulisTambahan {
   id: string;
   nama: string;
@@ -49,12 +58,13 @@ interface PublikasiItem {
   issn?: string;
   halaman?: string;
   edisi?: string;
-  volume?: string;
-  nomor?: string;
+  volume?: number;
+  nomor?: number;
   keterangan?: string;
   // Buku
   penerbit?: string;
   isbn?: string;
+  jumlah_halaman: number | null;
   // HaKI
   nomorSertifikat?: string;
   jenisHaki?: string;
@@ -69,6 +79,7 @@ interface PublikasiItem {
   urutanPenulis: number | "";
   penulisDosen: PenulisTambahan[];
   penulisMahasiswa: PenulisTambahan[];
+  riwayat?: RiwayatAktivitas[];
 }
 
 type ViewMode = "periode" | "list" | "form" | "detail";
@@ -251,10 +262,10 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     issn: "",
     halaman: "",
     edisi: "",
-    volume: "",
-    nomor: "",
+    volume: 0,
+    nomor: 0,
     keterangan: "",
-    penerbit: "", isbn: "",
+    penerbit: "", isbn: "", jumlah_halaman: null,
     nomorSertifikat: "", jenisHaki: "",
     namaProto: "", jenisProto: "", urlDokumen: "",
     tanggal: new Date().toISOString().split("T")[0],
@@ -281,6 +292,30 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             const rawTanggal = item.tanggalDibuat || item.tanggal || "";
             const isUnknown = !rawTanggal || rawTanggal.toLowerCase() === "unknown";
 
+            const penulisDosen: PenulisTambahan[] = [];
+            const penulisMahasiswa: PenulisTambahan[] = [];
+
+            if (item.tim_penulis && Array.isArray(item.tim_penulis)) {
+                item.tim_penulis.forEach((p: any) => {
+                    if (p.jenis === "Dosen") {
+                        penulisDosen.push({ 
+                            id: p.id_penulis || Math.random().toString(), 
+                            nama: p.nama || "Unknown", 
+                            afiliasi: p.afiliasi || "-", 
+                            urutan: p.urutan || "" 
+                        });
+                    } 
+                    else if (p.jenis === "Mahasiswa") {
+                        penulisMahasiswa.push({ 
+                            id: p.id_penulis || Math.random().toString(), 
+                            nama: p.nama || "Unknown", 
+                            afiliasi: p.afiliasi || "-", 
+                            urutan: p.urutan || "" 
+                        });
+                    }
+                });
+            }
+
             return {
               ...item,
               id: String(item.id),
@@ -290,6 +325,14 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               tanggalDibuat: isUnknown ? "Tidak Diketahui" : formatTanggalIndo(rawTanggal), 
               periodeId: getPeriodeFromDate(rawTanggal), 
               jenis: getJenisFromJenisPublikasi(item.jenis_publikasi),
+              penulisDosen: penulisDosen,
+              penulisMahasiswa: penulisMahasiswa,
+              riwayat: [
+                { id: "1", tanggal: "10 April 2026, 09:00", status: "draft", aktor: user.name, peran: "Dosen", catatan: "Menyimpan draf awal dokumen." },
+                { id: "2", tanggal: "12 April 2026, 14:30", status: "submitted", aktor: user.name, peran: "Dosen", catatan: null },
+                { id: "3", tanggal: "15 April 2026, 10:15", status: "revisi", aktor: "Bpk. Budi", peran: "Reviewer", catatan: "Mohon perbaiki format penulisan pada dokumen lampiran sesuai panduan terbaru LPPM." },
+                { id: "4", tanggal: "18 April 2026, 11:00", status: "approved", aktor: "Admin LPPM", peran: "Admin", catatan: "Dokumen sudah sesuai dan diverifikasi." }
+              ].reverse()
             };
           });
 
@@ -481,14 +524,19 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   /* ═══════════ VIEW: DETAIL ═══════════ */
+/* ═══════════ VIEW: DETAIL ═══════════ */
   if (viewMode === "detail" && selectedItem) {
     return (
       <PageWrapper title="Detail Publikasi"
         breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel" }, { label: selectedItem.id }]}
         actions={<button onClick={() => setViewMode("list")} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /> Kembali</button>}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
           <div className="lg:col-span-2 space-y-5">
             <StepperStatus module="hibah" currentStatus={selectedItem.status} />
+            
+            {/* KOTAK INFORMASI UTAMA */}
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -503,6 +551,9 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   <>
                     <div><p className="text-xs text-slate-400 mb-0.5">Nama Jurnal</p><p className="text-sm text-slate-800">{selectedItem.namaJurnal || "-"}</p></div>
                     <div><p className="text-xs text-slate-400 mb-0.5">Jenis Jurnal</p><p className="text-sm text-slate-800">{selectedItem.jenis_publikasi || "-"}</p></div>
+                    <div><p className="text-xs text-slate-400 mb-0.5">Penerbit</p><p className="text-sm text-slate-800">{selectedItem.penerbit || "-"}</p></div>
+                    <div><p className="text-xs text-slate-400 mb-0.5">ISSN</p><p className="text-sm text-slate-800">{selectedItem.issn || "-"}</p></div>
+                    <div><p className="text-xs text-slate-400 mb-0.5">Volume/Nomor Terbit/Halaman</p><p className="text-sm text-slate-800">{`${selectedItem.volume || "-"}/${selectedItem.nomor || "-"}/${selectedItem.halaman || "-"}`}</p></div>
                     {selectedItem.urlDoi && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL/DOI</p><a href={selectedItem.urlDoi} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
@@ -510,6 +561,8 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   <>
                     <div><p className="text-xs text-slate-400 mb-0.5">Penerbit</p><p className="text-sm text-slate-800">{selectedItem.penerbit || "-"}</p></div>
                     <div><p className="text-xs text-slate-400 mb-0.5">ISBN</p><p className="text-sm text-slate-800">{selectedItem.isbn || "-"}</p></div>
+                    <div><p className="text-xs text-slate-400 mb-0.5">Jumlah Halaman</p><p className="text-sm text-slate-800">{selectedItem.jumlah_halaman || "-"}</p></div>
+                    {selectedItem.urlTautan && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL</p><a href={selectedItem.urlTautan} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
                 {selectedItem.jenis === "haki" && (
@@ -527,23 +580,128 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                 )}
               </div>
             </div>
+
+            {/* TIM PENULIS (KHUSUS ARTIKEL) */}
+            {selectedItem.jenis === "artikel" && (
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Tim Penulis</h3>
+                
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Urutan Anda sebagai Penulis</p>
+                    <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>
+                      {selectedItem.urutanPenulis ? `Penulis ke-${selectedItem.urutanPenulis}` : "-"}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* List Dosen */}
+                    <div>
+                      <p className="text-xs text-slate-400 mb-2">Penulis Dosen Lainnya</p>
+                      {selectedItem.penulisDosen && selectedItem.penulisDosen.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedItem.penulisDosen.map((penulis) => (
+                            <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                              <div>
+                                <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
+                              </div>
+                              <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
+                                Urutan: {penulis.urutan || "-"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Tidak ada penulis dosen tambahan.</p>
+                      )}
+                    </div>
+                    {/* List Mahasiswa */}
+                    <div>
+                      <p className="text-xs text-slate-400 mb-2">Penulis Mahasiswa</p>
+                      {selectedItem.penulisMahasiswa && selectedItem.penulisMahasiswa.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedItem.penulisMahasiswa.map((penulis) => (
+                            <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                              <div>
+                                <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
+                              </div>
+                              <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
+                                Urutan: {penulis.urutan || "-"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Tidak ada penulis mahasiswa.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h4 className="text-sm text-slate-800 mb-3" style={{ fontWeight: 600 }}>Aksi</h4>
-              <div className="space-y-2">
-                {selectedItem.status === "draft" && (
-                  <>
-                    <button onClick={() => handleSave(true)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700" style={{ fontWeight: 500 }}><Send className="w-4 h-4" /> Submit</button>
-                    <button onClick={() => { setEditingItem(selectedItem); setFormData({ ...selectedItem }); setFormErrors({}); setViewMode("form"); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Edit className="w-4 h-4" /> Edit</button>
-                    <button onClick={() => setConfirmModal({ open: true, title: "Hapus?", message: "Data akan dihapus.", variant: "danger", onConfirm: () => { handleDelete(selectedItem.id); setViewMode("list"); } })} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100" style={{ fontWeight: 500 }}><Trash2 className="w-4 h-4" /> Hapus</button>
-                  </>
-                )}
-                {["approved", "verified"].includes(selectedItem.status) && (
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Download className="w-4 h-4" /> Export PDF</button>
-                )}
+            {/* --- AKSI --- */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <h4 className="text-sm text-slate-800 mb-3" style={{ fontWeight: 600 }}>Aksi</h4>
+                <div className="space-y-2">
+                  {selectedItem.status === "draft" && (
+                    <>
+                      <button onClick={() => handleSave(true)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700" style={{ fontWeight: 500 }}><Send className="w-4 h-4" /> Submit</button>
+                      <button onClick={() => { setEditingItem(selectedItem); setFormData({ ...selectedItem }); setFormErrors({}); setViewMode("form"); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Edit className="w-4 h-4" /> Edit</button>
+                      <button onClick={() => setConfirmModal({ open: true, title: "Hapus?", message: "Data akan dihapus.", variant: "danger", onConfirm: () => { handleDelete(selectedItem.id); setViewMode("list"); } })} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100" style={{ fontWeight: 500 }}><Trash2 className="w-4 h-4" /> Hapus</button>
+                    </>
+                  )}
+                  {["approved", "verified"].includes(selectedItem.status) && (
+                    <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Download className="w-4 h-4" /> Export PDF</button>
+                  )}
+                </div>
               </div>
             </div>
+            
+            {/* KOTAK RIWAYAT AKTIVITAS (Tinggi menyesuaikan konten) */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <h4 className="text-sm text-slate-800 mb-4" style={{ fontWeight: 600 }}>Riwayat Aktivitas</h4>
+              
+              {selectedItem.riwayat && selectedItem.riwayat.length > 0 ? (
+                <div className="relative border-l-2 border-slate-100 ml-2 space-y-6 pb-2 mt-2">
+                  {selectedItem.riwayat.map((item, index) => {
+                    const dotColor = 
+                      item.status.toLowerCase() === 'approved' ? 'bg-green-500' : 
+                      item.status.toLowerCase() === 'revisi' ? 'bg-amber-500' : 
+                      item.status.toLowerCase() === 'submitted' ? 'bg-blue-500' : 'bg-slate-400';
+
+                    return (
+                      <div key={item.id} className="relative pl-5">
+                        <div className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ring-4 ring-white ${dotColor}`}></div>
+                        <p className="text-[11px] text-slate-400 mb-0.5">{item.tanggal}</p>
+                        <div className="flex items-center flex-wrap gap-x-1.5 mb-1">
+                          <span className="text-sm text-slate-800 capitalize" style={{ fontWeight: 600 }}>
+                            {item.status}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            oleh {item.aktor} ({item.peran})
+                          </span>
+                        </div>
+                        {item.catatan && (
+                          <div className="mt-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5 relative">
+                            <div className="absolute -top-1.5 left-4 w-3 h-3 bg-slate-50 border-t border-l border-slate-100 rotate-45"></div>
+                            <p className="text-xs text-slate-600 italic relative z-10">"{item.catatan}"</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-xs text-slate-400 italic">Belum ada riwayat aktivitas.</p>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
         <ConfirmModal {...confirmModal} isOpen={confirmModal.open} onClose={() => setConfirmModal((p) => ({ ...p, open: false }))} />
@@ -676,17 +834,19 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   <FormField label="Volume" 
                   required error={formErrors.volume}>
                     <input 
-                    type="text" 
+                    type="number" 
+                    min= "0"
                     value={formData.volume} 
-                    onChange={(e) => setFormData((p) => ({ ...p, volume: e.target.value }))} 
+                    onChange={(e) => setFormData((p) => ({ ...p, volume: parseInt(e.target.value) }))} 
                     className={inputClass(!!formErrors.volume)} />
                   </FormField>
                   <FormField label="Nomor" 
                   required error={formErrors.nomor}>
                     <input 
-                    type="text" 
+                    type="number"
+                    min= "0" 
                     value={formData.nomor} 
-                    onChange={(e) => setFormData((p) => ({ ...p, nomor: e.target.value }))} 
+                    onChange={(e) => setFormData((p) => ({ ...p, nomor: parseInt(e.target.value) }))} 
                     className={inputClass(!!formErrors.nomor)} />
                   </FormField>
                 </div>
