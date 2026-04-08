@@ -1,4 +1,4 @@
-import { apiReader } from './apiReader';
+import { apiReader } from '../utils/apiReader';
 //import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
 import pool from '../config/database';
 
@@ -218,7 +218,7 @@ export class syncToDB {
         }
     }
 
-static async syncPublikasiEachSDM(): Promise<void> {
+    static async syncPublikasiEachSDM(): Promise<void> {
         try {
             console.log("Menarik data SDM dari SISTER untuk sinkronisasi Publikasi...");
             const dataSDM = await apiReader.fetchSDM();
@@ -317,7 +317,7 @@ static async syncPublikasiEachSDM(): Promise<void> {
                             detail.seminar ? 1 : 0, 
                             detail.prosiding ? 1 : 0, 
                             detail.asal_data || pub.asal_data || null,
-                            "Approved"
+                            "approved"
                         ]);
 
                         if (detail.penulis && Array.isArray(detail.penulis)) {
@@ -328,8 +328,13 @@ static async syncPublikasiEachSDM(): Promise<void> {
                                         nomor_induk_peserta_didik, id_orang, urutan, afiliasi, 
                                         corresponding_author, peran
                                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                    ON DUPLICATE KEY UPDATE 
-                                        nama = VALUES(nama), urutan = VALUES(urutan)
+                                    ON DUPLICATE KEY UPDATE
+                                        jenis = VALUES(jenis),
+                                        urutan = VALUES(urutan),
+                                        afiliasi = VALUES(afiliasi),
+                                        peran = VALUES(peran),
+                                        corresponding_author = VALUES(corresponding_author),
+                                        id_sdm = VALUES(id_sdm)
                                 `;
                                 await pool.execute(queryPenulis, [
                                     idPublikasi,
@@ -354,8 +359,13 @@ static async syncPublikasiEachSDM(): Promise<void> {
                                         id, id_publikasi, nama, jenis_dokumen, nama_file, 
                                         jenis_file, tanggal_upload, tautan, keterangan
                                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                    ON DUPLICATE KEY UPDATE 
-                                        nama_file = VALUES(nama_file)
+                                     ON DUPLICATE KEY UPDATE 
+                                        nama = VALUES(nama),
+                                        jenis_dokumen = VALUES(jenis_dokumen),
+                                        nama_file = VALUES(nama_file),
+                                        jenis_file = VALUES(jenis_file),
+                                        tautan = VALUES(tautan),
+                                        keterangan = = VALUES(keterangan)
                                 `;
                                 await pool.execute(queryDokumen, [
                                     dok.id || null, 

@@ -15,8 +15,23 @@ export class PublikasiController {
                     message: 'Parameter dosen_id diperlukan.' 
                 });
             }
-            const query = `SELECT dp.id, dp.judul, dp.quartile, dp.jenis_publikasi, dp.tanggal, dp.penerbit, dp.isbn, dp.tautan AS urlTautan, dp.keterangan, dp.nama_jurnal AS namaJurnal, dp.halaman, dp.edisi, dp.nomor, dp.doi AS urlDoi, dp.issn, dp.status FROM detail_publikasi dp
-JOIN publikasi p ON dp.id = p.id
+            const query = `SELECT dp.id, dp.judul, dp.quartile, dp.jenis_publikasi, dp.tanggal, dp.penerbit, dp.isbn, dp.jumlah_halaman, dp.tautan AS urlTautan, dp.keterangan, dp.nama_jurnal AS namaJurnal, dp.halaman, dp.edisi, dp.volume, dp.nomor, dp.doi AS urlDoi, dp.issn, dp.status,
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id_penulis', pp.id_penulis,
+                'nama', pp.nama,
+                'jenis', pp.jenis,
+                'afiliasi', pp.afiliasi,
+                'urutan', pp.urutan,
+                'id_sdm', pp.id_sdm
+            )
+        )
+        FROM publikasi_penulis pp
+        WHERE pp.id_publikasi = p.id
+    ) AS tim_penulis
+FROM publikasi p
+LEFT JOIN detail_publikasi dp ON p.id = dp.id
 WHERE p.id_user = ?`;
             
             const [rows]: any = await pool.execute(query, [dosen_id]);
