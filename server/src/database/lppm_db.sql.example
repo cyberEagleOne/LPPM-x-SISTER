@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: mysql-db:3306
--- Generation Time: Apr 07, 2026 at 06:36 AM
+-- Generation Time: Apr 17, 2026 at 02:52 AM
 -- Server version: 8.0.45
 -- PHP Version: 8.3.26
 
@@ -37,9 +37,7 @@ CREATE TABLE `anggota` (
   `nomor_induk_peserta_didik` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'NIM (jika jenis=Mahasiswa)',
   `id_orang` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID kolaborator luar (jika jenis lain)',
   `aktif` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1=aktif, 0=tidak aktif',
-  `peran` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Ketua atau Anggota',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `peran` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Ketua atau Anggota'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -52,7 +50,7 @@ CREATE TABLE `bidang_keilmuan_pn` (
   `id` int NOT NULL,
   `urutan` int NOT NULL,
   `id_kelompok_bidang` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `kelompok_bidang` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `kelompok_bidang` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `id_penelitian` char(56) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -66,7 +64,7 @@ CREATE TABLE `bidang_keilmuan_sdm` (
   `id` bigint NOT NULL,
   `urutan` int NOT NULL,
   `id_kelompok_bidang` char(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `kelompok_bidang` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `kelompok_bidang` text COLLATE utf8mb4_general_ci,
   `id_sdm` char(255) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -99,10 +97,7 @@ CREATE TABLE `detail_penelitian` (
   `dana_institusi_lain` decimal(15,2) DEFAULT '0.00' COMMENT 'Dana dari institusi lain (Rp)',
   `in_kind` text COLLATE utf8mb4_unicode_ci COMMENT 'In kind',
   `sk_penugasan` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nomor SK penugasan',
-  `tanggal_sk_penugasan` date DEFAULT NULL COMMENT 'Tanggal SK',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `id_penelitian` char(56) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL
+  `tanggal_sk_penugasan` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Tanggal SK'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -114,7 +109,7 @@ CREATE TABLE `detail_penelitian` (
 CREATE TABLE `detail_publikasi` (
   `id` char(36) COLLATE utf8mb4_general_ci NOT NULL,
   `kategori_kegiatan` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `judul` text COLLATE utf8mb4_general_ci NOT NULL,
+  `judul` text COLLATE utf8mb4_general_ci,
   `quartile` int DEFAULT NULL,
   `jenis_publikasi` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `tanggal` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
@@ -204,7 +199,7 @@ CREATE TABLE `penelitian` (
 CREATE TABLE `publikasi` (
   `id` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `kategori_kegiatan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `judul` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `judul` text COLLATE utf8mb4_general_ci,
   `quartile` int DEFAULT NULL,
   `jenis_publikasi` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `tanggal` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -317,8 +312,7 @@ ALTER TABLE `bidang_keilmuan_sdm`
 -- Indexes for table `detail_penelitian`
 --
 ALTER TABLE `detail_penelitian`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_penelitian5` (`id_penelitian`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `detail_publikasi`
@@ -359,6 +353,7 @@ ALTER TABLE `publikasi`
 --
 ALTER TABLE `publikasi_dokumen`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_dokumen` (`id_publikasi`,`nama_file`),
   ADD KEY `publikasi_dokumen_ibfk_1` (`id_publikasi`);
 
 --
@@ -366,6 +361,7 @@ ALTER TABLE `publikasi_dokumen`
 --
 ALTER TABLE `publikasi_penulis`
   ADD PRIMARY KEY (`id_penulis`),
+  ADD UNIQUE KEY `unique_penulis` (`id_publikasi`,`nama`),
   ADD KEY `fk_dt_publikasi` (`id_publikasi`);
 
 --
@@ -440,7 +436,7 @@ ALTER TABLE `bidang_keilmuan_sdm`
 -- Constraints for table `detail_penelitian`
 --
 ALTER TABLE `detail_penelitian`
-  ADD CONSTRAINT `fk_penelitian5` FOREIGN KEY (`id_penelitian`) REFERENCES `penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_penelitian5` FOREIGN KEY (`id`) REFERENCES `penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `detail_publikasi`
