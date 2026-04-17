@@ -47,7 +47,7 @@ export class syncToDB {
                 if(listBidangIlmuSDM && listBidangIlmuSDM.length > 0){
                     for (const bidang of listBidangIlmuSDM) {
                             const queryBidang = `
-                                INSERT INTO bidang_keilmuan_SDM (id, urutan, id_kelompok_bidang, kelompok_bidang, id_sdm)
+                                INSERT INTO bidang_keilmuan_sdm (id, urutan, id_kelompok_bidang, kelompok_bidang, id_sdm)
                                 VALUES (?, ?, ?, ?, ?)
                             `;
                             await pool.execute(queryBidang, [
@@ -143,32 +143,61 @@ export class syncToDB {
                         const detail = await apiReader.fetchDetailPenelitian(idPenelitian);
                         
                         if (detail) {
-                            const idDetail = detail.id || detail.id_penelitian || idPenelitian;
 
                             const queryDetail = `
-                                INSERT INTO detail_penelitian (id, id_kategori_kegiatan, judul, id_penelitian)
-                                VALUES (?, ?, ?, ?)
+                                INSERT INTO detail_penelitian (id, id_kategori_kegiatan, judul, 
+                                id_afiliasi, afiliasi, id_kelompok_bidang, kelompok_bidang, 
+                                id_litabmas_sebelumnya, litabmas_sebelumnya, id_jenis_skim, jenis_skim,
+                                lokasi, tahun_usulan, tahun_kegiatan, tahun_pelaksanaan, dana_dikti,
+                                dana_perguruan_tinggi, dana_institusi_lain, in_kind, sk_penugasan, tanggal_sk_penugasan)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 ON DUPLICATE KEY UPDATE judul = VALUES(judul)
                             `;
                             await pool.execute(queryDetail, [
-                                idDetail || null,
+                                idPenelitian,
                                 detail.id_kategori_kegiatan || null,
                                 detail.judul || pen.judul,
-                                idPenelitian 
+                                detail.id_afiliasi || null,
+                                detail.afiliasi || null,
+                                detail.id_kelompok_bidang || null,
+                                detail.kelompok_bidang || null,
+                                detail.id_litabmas_sebelumnya || null,
+                                detail.litabmas_sebelumnya || null,
+                                detail.id_jenis_skim || null,
+                                detail.jenis_skim || null,
+                                detail.lokasi || null,
+                                detail.tahun_usulan || null,
+                                detail.tahun_kegiatan || null,
+                                detail.tahun_pelaksanaan || null,
+                                detail.dana_dikti || null,
+                                detail.dana_perguruan_tinggi || null,
+                                detail.dana_institusi_lain || null,
+                                detail.in_kind || null,
+                                detail.sk_penugasan || null,
+                                detail.tanggal_sk_penugasan || null
                             ]);
 
                             if (detail.anggota && Array.isArray(detail.anggota)) {
+                                await pool.execute('DELETE FROM anggota WHERE litabmas_id = ?', [idPenelitian]);
+
                                 for (const anggota of detail.anggota) {
                                     const queryAnggota = `
-                                        INSERT INTO anggota (id, litabmas_id, nama, jenis)
-                                        VALUES (?, ?, ?, ?)
-                                        ON DUPLICATE KEY UPDATE nama = VALUES(nama)
+                                        INSERT INTO anggota (
+                                            id, litabmas_id, nama, jenis, id_sdm, id_peserta_didik, 
+                                            nomor_induk_peserta_didik, id_orang, aktif, peran
+                                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                     `;
                                     await pool.execute(queryAnggota, [
-                                        anggota.id || null,
-                                        idDetail, 
-                                        anggota.nama || "Unknown",
-                                        anggota.peran || anggota.jenis || null
+                                        anggota.id || null,                        
+                                        idPenelitian,                              
+                                        anggota.nama || "Unknown",                 
+                                        anggota.jenis || "Dosen",                  
+                                        anggota.id_sdm || null,                    
+                                        anggota.id_peserta_didik || null,          
+                                        anggota.nomor_induk_peserta_didik || null, 
+                                        anggota.id_orang || null,                  
+                                        1,                                         
+                                        anggota.peran || "Anggota"                 
                                     ]);
                                 }
                             }
@@ -182,13 +211,14 @@ export class syncToDB {
                                     `;
                                     await pool.execute(queryMitra, [
                                         mitra.id || null, 
-                                        idDetail, 
+                                        idPenelitian, 
                                         mitra.nama || "Unknown"
                                     ]);
                                 }
                             }
 
                             if (detail.dokumen && Array.isArray(detail.dokumen)) {
+                                await pool.execute('DELETE FROM dokumen WHERE litabmas_id = ?', [idPenelitian]);
                                 for (const dok of detail.dokumen) {
                                     const queryDok = `
                                         INSERT INTO dokumen (id, litabmas_id, nama, jenis_dokumen, nama_file, jenis_file, tautan, keterangan)
@@ -197,7 +227,7 @@ export class syncToDB {
                                     `;
                                     await pool.execute(queryDok, [
                                         dok.id || null,
-                                        idDetail,
+                                        idPenelitian,
                                         dok.nama || "Unknown",
                                         dok.jenis_dokumen || null,
                                         dok.nama_file || null,
@@ -254,8 +284,11 @@ export class syncToDB {
                         INSERT INTO publikasi (
                             id, kategori_kegiatan, judul, quartile, jenis_publikasi, tanggal, asal_data, id_user
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE 
-                            judul = VALUES(judul), tanggal = VALUES(tanggal)
+                        ON DUPLICATE KEY UPDATE
+                            kategori_kegiatan = VALUES(kategori_kegiatan),
+                            judul = VALUES(judul), 
+                            quartile = VALUES(quartile),
+                            tanggal = VALUES(tanggal)
                     `;
                     await pool.execute(queryPublikasi, [
                         idPublikasi,
@@ -321,6 +354,7 @@ export class syncToDB {
                         ]);
 
                         if (detail.penulis && Array.isArray(detail.penulis)) {
+                            await pool.execute('DELETE FROM publikasi_penulis WHERE id_publikasi = ?', [idPublikasi]);
                             for (const penulis of detail.penulis) {
                                 const queryPenulis = `
                                     INSERT INTO publikasi_penulis (
@@ -353,6 +387,7 @@ export class syncToDB {
                         }
 
                         if (detail.dokumen && Array.isArray(detail.dokumen)) {
+                            await pool.execute('DELETE FROM publikasi_dokumen WHERE id_publikasi = ?', [idPublikasi]);
                             for (const dok of detail.dokumen) {
                                 const queryDokumen = `
                                     INSERT INTO publikasi_dokumen (
@@ -365,7 +400,7 @@ export class syncToDB {
                                         nama_file = VALUES(nama_file),
                                         jenis_file = VALUES(jenis_file),
                                         tautan = VALUES(tautan),
-                                        keterangan = = VALUES(keterangan)
+                                        keterangan = VALUES(keterangan)
                                 `;
                                 await pool.execute(queryDokumen, [
                                     dok.id || null, 
@@ -392,8 +427,7 @@ export class syncToDB {
 }
 
 if (require.main === module) {
-    syncToDB.syncPublikasiEachSDM();
-    /*(async () => {
+    (async () => {
         try {
             console.log("Memulai sinkronisasi SDM...");
 
@@ -413,5 +447,4 @@ if (require.main === module) {
             process.exit(1); 
         }
     })();
-    */
 }
