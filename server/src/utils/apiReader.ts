@@ -1,4 +1,4 @@
-import { HttpClient } from '../utils/httpClient';
+import { HttpClient } from './httpClient';
 import { Config } from '../config/apiConfig';
 import { Token } from '../config/models';
 //import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
@@ -12,23 +12,21 @@ export class apiReader {
 
   static async getAuthToken(): Promise<string> {
     try {
-      const queryCek = "SELECT id, token, timestamp FROM token ORDER BY id DESC LIMIT 1";
-      const [rows] = await pool.execute<Token[]>(queryCek);
+      const queryCek = `
+        SELECT id, token, TIMESTAMPDIFF(MINUTE, timestamp, NOW()) AS umur_menit 
+        FROM token 
+        ORDER BY id DESC LIMIT 1
+      `;
+      const [rows]: any = await pool.execute(queryCek);
 
       if (rows.length > 0) {
         const dataToken = rows[0];
 
-        const waktuBuat = new Date(dataToken.timestamp);
-        const waktuSekarang = new Date();
-        
-        const selisihMilidetik = waktuSekarang.getTime() - waktuBuat.getTime();
-        const selisihMenit = Math.floor(selisihMilidetik / (1000 * 60));
-
-        if (selisihMenit < 60) {
-          console.log(`Token dari DB masih valid. (Umur: ${selisihMenit} menit)`);
+        if (dataToken.umur_menit < 60 && dataToken.umur_menit >= 0) {
+          console.log(`Token dari DB masih valid. (Umur: ${dataToken.umur_menit} menit)`);
           return dataToken.token;
         } else {
-          console.log(`Token kadaluarsa (Umur: ${selisihMenit} menit). Menghapus dari DB...`);
+          console.log(`Token kadaluarsa (Umur: ${dataToken.umur_menit} menit). Menghapus dari DB...`);
           await pool.execute("DELETE FROM token WHERE id = ?", [dataToken.id]);
         }
       }
@@ -52,27 +50,6 @@ export class apiReader {
       console.error("Terjadi kesalahan saat mengurus token:", error.message);
       throw error;
     }
-  }
-
-  static async testLihatResponseSDM(): Promise<void> {
-    const token = await this.getAuthToken();
-
-    console.log(`\nMengambil data dari: ${Config.URL_SDM}`);
-    const response = await HttpClient.get(Config.URL_SDM, token)
-    const dataSdm = response;
-
-    console.log("\n========== HASIL RESPONSE SISTER API ==========");
-      
-    if (Array.isArray(dataSdm) && dataSdm.length > 0) {
-        console.log(`Total Data Ditemukan: ${dataSdm.length} baris`);
-        console.log("\nContoh Struktur Data (Item Pertama):");
-        console.dir(dataSdm[0], { depth: null, colors: true });
-    } else {
-        console.log("Struktur Response Utuh:");
-        console.dir(dataSdm, { depth: null, colors: true });
-    }
-      
-    console.log("===============================================\n");
   }
 
   static async fetchSDM(): Promise<any[]> {
@@ -115,8 +92,4 @@ export class apiReader {
     const url = `${Config.URL_PUBLIKASI}/${id_publikasi}`;
     return await HttpClient.get(url, token);
   }
-}
-
-if (require.main === module) {
-  apiReader.testLihatResponseSDM();
 }

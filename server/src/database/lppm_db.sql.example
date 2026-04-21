@@ -1,0 +1,486 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.3
+-- https://www.phpmyadmin.net/
+--
+-- Host: mysql-db:3306
+-- Generation Time: Apr 17, 2026 at 02:52 AM
+-- Server version: 8.0.45
+-- PHP Version: 8.3.26
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `lppm_db`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `anggota`
+--
+
+CREATE TABLE `anggota` (
+  `id` bigint UNSIGNED NOT NULL,
+  `litabmas_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'FK ke litabmas.id',
+  `nama` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama anggota',
+  `jenis` enum('Dosen','Mahasiswa','Profesional/Mitra') COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Jenis anggota',
+  `id_sdm` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID Dosen (jika jenis=Dosen)',
+  `id_peserta_didik` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID mahasiswa (jika jenis=Mahasiswa)',
+  `nomor_induk_peserta_didik` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'NIM (jika jenis=Mahasiswa)',
+  `id_orang` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID kolaborator luar (jika jenis lain)',
+  `aktif` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1=aktif, 0=tidak aktif',
+  `peran` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Ketua atau Anggota'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bidang_keilmuan_pn`
+--
+
+CREATE TABLE `bidang_keilmuan_pn` (
+  `id` int NOT NULL,
+  `urutan` int NOT NULL,
+  `id_kelompok_bidang` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `kelompok_bidang` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `id_penelitian` char(56) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bidang_keilmuan_sdm`
+--
+
+CREATE TABLE `bidang_keilmuan_sdm` (
+  `id` bigint NOT NULL,
+  `urutan` int NOT NULL,
+  `id_kelompok_bidang` char(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `kelompok_bidang` text COLLATE utf8mb4_general_ci,
+  `id_sdm` char(255) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `detail_penelitian`
+--
+
+CREATE TABLE `detail_penelitian` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'UUID penelitian/pengabdian dari SISTER',
+  `id_kategori_kegiatan` int DEFAULT NULL COMMENT 'ID kategori kegiatan',
+  `judul` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Judul kegiatan',
+  `id_afiliasi` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'UUID perguruan tinggi / lembaga afiliasi',
+  `afiliasi` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nama perguruan tinggi / lembaga afiliasi',
+  `id_kelompok_bidang` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'UUID kelompok bidang litabmas',
+  `kelompok_bidang` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nama kelompok bidang litabmas',
+  `id_litabmas_sebelumnya` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'UUID litabmas sebelumnya (lanjutan)',
+  `litabmas_sebelumnya` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Judul litabmas sebelumnya (lanjutan)',
+  `id_jenis_skim` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'UUID skim kegiatan',
+  `jenis_skim` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nama skim kegiatan',
+  `lokasi` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Lokasi kegiatan',
+  `tahun_usulan` int DEFAULT NULL COMMENT 'Tahun usulan',
+  `tahun_kegiatan` int DEFAULT NULL COMMENT 'Tahun kegiatan',
+  `tahun_pelaksanaan` int DEFAULT NULL COMMENT 'Tahun pelaksanaan',
+  `lama_kegiatan` int DEFAULT NULL COMMENT 'Lama pelaksanaan (tahun)',
+  `tahun_pelaksanaan_ke` int DEFAULT NULL COMMENT 'Tahun pelaksanaan ke',
+  `dana_dikti` decimal(15,2) DEFAULT '0.00' COMMENT 'Dana dari DIKTI (Rp)',
+  `dana_perguruan_tinggi` decimal(15,2) DEFAULT '0.00' COMMENT 'Dana dari PT (Rp)',
+  `dana_institusi_lain` decimal(15,2) DEFAULT '0.00' COMMENT 'Dana dari institusi lain (Rp)',
+  `in_kind` text COLLATE utf8mb4_unicode_ci COMMENT 'In kind',
+  `sk_penugasan` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nomor SK penugasan',
+  `tanggal_sk_penugasan` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Tanggal SK'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `detail_publikasi`
+--
+
+CREATE TABLE `detail_publikasi` (
+  `id` char(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `kategori_kegiatan` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `judul` text COLLATE utf8mb4_general_ci,
+  `quartile` int DEFAULT NULL,
+  `jenis_publikasi` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `tanggal` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_kategori_kegiatan` int NOT NULL,
+  `id_jenis_publikasi` int NOT NULL,
+  `kategori_capaian_luaran` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_kategori_capaian_luaran` int DEFAULT NULL,
+  `judul_litabmas` text COLLATE utf8mb4_general_ci,
+  `id_litabmas` char(36) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nomor_paten` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pemberi_paten` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `penerbit` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `isbn` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `jumlah_halaman` int DEFAULT NULL,
+  `tautan` text COLLATE utf8mb4_general_ci,
+  `keterangan` text COLLATE utf8mb4_general_ci,
+  `judul_artikel` text COLLATE utf8mb4_general_ci,
+  `judul_asli` text COLLATE utf8mb4_general_ci,
+  `nama_jurnal` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `halaman` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `edisi` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `volume` int DEFAULT NULL,
+  `nomor` int DEFAULT NULL,
+  `doi` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `issn` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `e_issn` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `seminar` tinyint(1) DEFAULT '0',
+  `prosiding` tinyint(1) DEFAULT '0',
+  `asal_data` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `status` varchar(50) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dokumen`
+--
+
+CREATE TABLE `dokumen` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'UUID dokumen dari SISTER',
+  `litabmas_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'FK ke litabmas.id',
+  `nama` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama dokumen',
+  `jenis_dokumen` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Jenis dokumen',
+  `nama_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nama file dokumen',
+  `jenis_file` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Mime type dokumen',
+  `tanggal_upload` datetime DEFAULT NULL COMMENT 'Waktu upload',
+  `tautan` text COLLATE utf8mb4_unicode_ci COMMENT 'Tautan dokumen',
+  `keterangan` text COLLATE utf8mb4_unicode_ci COMMENT 'Keterangan dokumen',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mitra`
+--
+
+CREATE TABLE `mitra` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'UUID mitra dari SISTER',
+  `litabmas_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'FK ke litabmas.id',
+  `nama` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama mitra',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `penelitian`
+--
+
+CREATE TABLE `penelitian` (
+  `id` char(56) COLLATE utf8mb4_general_ci NOT NULL,
+  `judul` text COLLATE utf8mb4_general_ci,
+  `tahun_pelaksanaan` int DEFAULT NULL,
+  `lama_kegiatan` int DEFAULT NULL,
+  `id_users` varchar(255) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `publikasi`
+--
+
+CREATE TABLE `publikasi` (
+  `id` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `kategori_kegiatan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `judul` text COLLATE utf8mb4_general_ci,
+  `quartile` int DEFAULT NULL,
+  `jenis_publikasi` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `tanggal` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `asal_data` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `id_user` char(255) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `publikasi_dokumen`
+--
+
+CREATE TABLE `publikasi_dokumen` (
+  `id` char(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_publikasi` char(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `nama` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `jenis_dokumen` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `nama_file` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `jenis_file` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `tanggal_upload` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `tautan` text COLLATE utf8mb4_general_ci,
+  `keterangan` text COLLATE utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `publikasi_penulis`
+--
+
+CREATE TABLE `publikasi_penulis` (
+  `id_penulis` int NOT NULL,
+  `id_publikasi` char(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `nama` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `jenis` enum('Dosen','Mahasiswa','Profesional/Mitra') COLLATE utf8mb4_general_ci NOT NULL,
+  `id_sdm` char(36) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `id_peserta_didik` char(36) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nomor_induk_peserta_didik` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `id_orang` char(36) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `urutan` int NOT NULL,
+  `afiliasi` text COLLATE utf8mb4_general_ci NOT NULL,
+  `corresponding_author` tinyint(1) DEFAULT '0',
+  `peran` varchar(100) COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `token`
+--
+
+CREATE TABLE `token` (
+  `id` int NOT NULL,
+  `token` text COLLATE utf8mb4_general_ci,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` char(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `nama` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nidn` char(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `provider_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `avatar` text COLLATE utf8mb4_unicode_ci,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `fakultas_id` bigint UNSIGNED DEFAULT NULL,
+  `prodi_id` bigint UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `anggota`
+--
+ALTER TABLE `anggota`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_anggota_litabmas` (`litabmas_id`),
+  ADD KEY `idx_anggota_sdm` (`id_sdm`),
+  ADD KEY `idx_anggota_peserta` (`id_peserta_didik`),
+  ADD KEY `idx_anggota_orang` (`id_orang`);
+
+--
+-- Indexes for table `bidang_keilmuan_pn`
+--
+ALTER TABLE `bidang_keilmuan_pn`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_penelitian6` (`id_penelitian`);
+
+--
+-- Indexes for table `bidang_keilmuan_sdm`
+--
+ALTER TABLE `bidang_keilmuan_sdm`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_id_sdm` (`id_sdm`);
+
+--
+-- Indexes for table `detail_penelitian`
+--
+ALTER TABLE `detail_penelitian`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `detail_publikasi`
+--
+ALTER TABLE `detail_publikasi`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `dokumen`
+--
+ALTER TABLE `dokumen`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_dokumen_litabmas` (`litabmas_id`);
+
+--
+-- Indexes for table `mitra`
+--
+ALTER TABLE `mitra`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_mitra_litabmas` (`litabmas_id`);
+
+--
+-- Indexes for table `penelitian`
+--
+ALTER TABLE `penelitian`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_users` (`id_users`);
+
+--
+-- Indexes for table `publikasi`
+--
+ALTER TABLE `publikasi`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_id_sdm2` (`id_user`);
+
+--
+-- Indexes for table `publikasi_dokumen`
+--
+ALTER TABLE `publikasi_dokumen`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_dokumen` (`id_publikasi`,`nama_file`),
+  ADD KEY `publikasi_dokumen_ibfk_1` (`id_publikasi`);
+
+--
+-- Indexes for table `publikasi_penulis`
+--
+ALTER TABLE `publikasi_penulis`
+  ADD PRIMARY KEY (`id_penulis`),
+  ADD UNIQUE KEY `unique_penulis` (`id_publikasi`,`nama`),
+  ADD KEY `fk_dt_publikasi` (`id_publikasi`);
+
+--
+-- Indexes for table `token`
+--
+ALTER TABLE `token`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `anggota`
+--
+ALTER TABLE `anggota`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bidang_keilmuan_pn`
+--
+ALTER TABLE `bidang_keilmuan_pn`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bidang_keilmuan_sdm`
+--
+ALTER TABLE `bidang_keilmuan_sdm`
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `publikasi_penulis`
+--
+ALTER TABLE `publikasi_penulis`
+  MODIFY `id_penulis` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `token`
+--
+ALTER TABLE `token`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `anggota`
+--
+ALTER TABLE `anggota`
+  ADD CONSTRAINT `fk_penelitian2` FOREIGN KEY (`litabmas_id`) REFERENCES `detail_penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `bidang_keilmuan_pn`
+--
+ALTER TABLE `bidang_keilmuan_pn`
+  ADD CONSTRAINT `fk_penelitian6` FOREIGN KEY (`id_penelitian`) REFERENCES `penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `bidang_keilmuan_sdm`
+--
+ALTER TABLE `bidang_keilmuan_sdm`
+  ADD CONSTRAINT `fk_id_sdm` FOREIGN KEY (`id_sdm`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `detail_penelitian`
+--
+ALTER TABLE `detail_penelitian`
+  ADD CONSTRAINT `fk_penelitian5` FOREIGN KEY (`id`) REFERENCES `penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `detail_publikasi`
+--
+ALTER TABLE `detail_publikasi`
+  ADD CONSTRAINT `fk_dt_penelitian_pb` FOREIGN KEY (`id`) REFERENCES `publikasi` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+--
+-- Constraints for table `dokumen`
+--
+ALTER TABLE `dokumen`
+  ADD CONSTRAINT `fk_penelitian4` FOREIGN KEY (`litabmas_id`) REFERENCES `detail_penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `mitra`
+--
+ALTER TABLE `mitra`
+  ADD CONSTRAINT `fk_penelitian3` FOREIGN KEY (`litabmas_id`) REFERENCES `detail_penelitian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `penelitian`
+--
+ALTER TABLE `penelitian`
+  ADD CONSTRAINT `fk_users` FOREIGN KEY (`id_users`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `publikasi`
+--
+ALTER TABLE `publikasi`
+  ADD CONSTRAINT `fk_id_sdm2` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `publikasi_dokumen`
+--
+ALTER TABLE `publikasi_dokumen`
+  ADD CONSTRAINT `publikasi_dokumen_ibfk_1` FOREIGN KEY (`id_publikasi`) REFERENCES `detail_publikasi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `publikasi_penulis`
+--
+ALTER TABLE `publikasi_penulis`
+  ADD CONSTRAINT `fk_dt_publikasi` FOREIGN KEY (`id_publikasi`) REFERENCES `detail_publikasi` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

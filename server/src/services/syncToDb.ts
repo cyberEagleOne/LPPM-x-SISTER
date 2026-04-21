@@ -1,4 +1,4 @@
-import { apiReader } from './apiReader';
+import { apiReader } from '../utils/apiReader';
 //import { SdmResponse, AnggotaPenelitian, BidangKeilmuanSDM, BidangKeilmuanPenelitian, DetailPenelitian, DokumenPenelitian, MitraPenelitian, Penelitian } from '../config/models'
 import pool from '../config/database';
 
