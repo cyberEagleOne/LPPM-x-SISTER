@@ -268,6 +268,8 @@ const NEW_PERIODE: PeriodePublikasi[] = [
       keterangan: "Periode pelaporan publikasi semester ganjil tahun ajaran 2026/2027. Keterlambatan tidak akan diproses."
     }
   },
+  { id: "2025/2026-Genap", tahun: "2025/2026", semester: "Genap", aktif: true },
+
   { id: "UNKNOWN-PERIODE", tahun: "Tidak Diketahui", semester: "Waktu", aktif: false }
 ]; 
 
@@ -730,6 +732,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
+  /* ═══════════ VIEW: DETAIL ═══════════ */
 /* ═══════════ VIEW: DETAIL ═══════════ */
   if (viewMode === "detail" && selectedItem) {
     return (
@@ -760,7 +763,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     <div><p className="text-xs text-slate-400 mb-0.5">Penerbit</p><p className="text-sm text-slate-800">{selectedItem.penerbit || "-"}</p></div>
                     <div><p className="text-xs text-slate-400 mb-0.5">ISSN</p><p className="text-sm text-slate-800">{selectedItem.issn || "-"}</p></div>
                     <div><p className="text-xs text-slate-400 mb-0.5">Volume/Nomor Terbit/Halaman</p><p className="text-sm text-slate-800">{`${selectedItem.volume || "-"}/${selectedItem.nomor || "-"}/${selectedItem.halaman || "-"}`}</p></div>
-                    {selectedItem.doi && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL/DOI</p><a href={selectedItem.doi} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
+                    {selectedItem.urlDoi && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL/DOI</p><a href={selectedItem.urlDoi} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
                 {selectedItem.jenis === "buku" && (
@@ -769,6 +772,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     <div><p className="text-xs text-slate-400 mb-0.5">ISBN</p><p className="text-sm text-slate-800">{selectedItem.isbn || "-"}</p></div>
                     <div><p className="text-xs text-slate-400 mb-0.5">Jumlah Halaman</p><p className="text-sm text-slate-800">{selectedItem.jumlah_halaman || "-"}</p></div>
                     {selectedItem.tautan && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL</p><a href={selectedItem.tautan} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
+                    {selectedItem.urlTautan && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL</p><a href={selectedItem.urlTautan} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
                 {selectedItem.jenis === "haki" && (
@@ -793,6 +797,12 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                 <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Tim Penulis</h3>
                 
                 <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Urutan Anda sebagai Penulis</p>
+                    <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>
+                      {selectedItem.urutanPenulis ? `Penulis ke-${selectedItem.urutanPenulis}` : "-"}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* List Dosen */}
                     <div>
@@ -842,6 +852,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             )}
           </div>
           <div className="space-y-5">
+          <div className="space-y-4">
             {/* --- AKSI --- */}
             <div className="space-y-4">
               <div className="bg-white rounded-xl border border-slate-200 p-5">
@@ -922,6 +933,90 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Informasi Publikasi</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="max-w-3xl space-y-5">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Informasi Publikasi</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+              <div className="sm:col-span-2">
+                <FormField label="Judul" 
+                required error={formErrors.judul}>
+                  <input 
+                  type="text" 
+                  value={formData.judul} 
+                  onChange={(e) => setFormData((p) => ({ ...p, judul: e.target.value }))} 
+                  className={inputClass(!!formErrors.judul)} />
+                </FormField>
+              </div>
+
+              {/* Artikel Fields */}
+              {currentJenis === "artikel" && (<>
+              <div className="sm:col-span-2">
+                <FormField label="Nama Jurnal" 
+                required error={formErrors.namaJurnal}>
+                  <input 
+                  type="text" 
+                  value={formData.namaJurnal} 
+                  onChange={(e) => setFormData((p) => ({ ...p, namaJurnal: e.target.value }))} 
+                  className={inputClass(!!formErrors.namaJurnal)} />
+                </FormField>
+              </div>
+
+                <FormField label="Jenis Publikasi" required>
+                  <select 
+                  value={formData.jenis_publikasi || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, jenis_publikasi: e.target.value }))} 
+                  className={inputClass()}>
+                    <option value="">Pilih jenis...</option>
+                    {KATEGORI_JURNAL_ARTIKEL.map((j) => <option 
+                    key={j} 
+                    value={j}>{j}</option>)}
+                  </select>
+                </FormField>
+                <FormField 
+                  label="Tanggal Publikasi" 
+                  required error={formErrors.tanggal}>
+                    <input type="date" 
+                    value={formData.tanggal} 
+                    onChange={(e) => setFormData((p) => ({ ...p, tanggal: e.target.value }))} 
+                    className={inputClass(!!formErrors.tanggal)} />
+                </FormField>
+                <FormField 
+                  label={
+                    formData.jenis_publikasi === "Jurnal internasional bereputasi" ? "Quartile Scopus" : 
+                    formData.jenis_publikasi === "Jurnal nasional terakreditasi" ? "Peringkat Sinta" : 
+                    "Peringkat / Quartile"
+                  }
+                >
+                  <select 
+                    value={formData.quartile || ""} 
+                    onChange={(e) => setFormData((p) => ({ ...p, quartile: parseInt(e.target.value) }))} 
+                    // Logika penentu apakah dropdown nyala atau mati:
+                    disabled={!(formData.jenis_publikasi === "Jurnal nasional terakreditasi" || formData.jenis_publikasi === "Jurnal internasional bereputasi")}
+                    // Tambahan class untuk mengubah warna saat mati:
+                    className={inputClass()}
+                  >
+                    <option value="">-- Pilih Peringkat --</option>
+                    <option value="1">{formData.jenis_publikasi?.includes("internasional") ? "Q1" : "Sinta 1"}</option>
+                    <option value="2">{formData.jenis_publikasi?.includes("internasional") ? "Q2" : "Sinta 2"}</option>
+                    <option value="3">{formData.jenis_publikasi?.includes("internasional") ? "Q3" : "Sinta 3"}</option>
+                    <option value="4">{formData.jenis_publikasi?.includes("internasional") ? "Q4" : "Sinta 4"}</option>
+                    {/* Tampilkan sinta 5 & 6 secara default atau saat jurnal nasional dipilih */}
+                    {(!formData.jenis_publikasi?.includes("internasional")) && (
+                      <><option value="5">Sinta 5</option><option value="6">Sinta 6</option></>
+                    )}
+                  </select>
+                </FormField>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:col-span-2">
+                  <FormField label="ISSN">
+                    <input
+                      type="text"
+                      value={formData.issn || ""} 
+                      onChange={(e) => setFormData((p) => ({...p, issn: e.target.value}))}
+                      disabled={!(formData.jenis_publikasi?.includes("Jurnal") || formData.jenis_publikasi?.includes("Prosiding"))}
+                      className={inputClass()}
+                    />
+                  </FormField>
 
                 <div className="sm:col-span-2">
                   <FormField label="Judul" 
@@ -942,6 +1037,24 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     value={formData.nama_jurnal} 
                     onChange={(e) => setFormData((p) => ({ ...p, nama_jurnal: e.target.value }))} 
                     className={inputClass(!!formErrors.nama_jurnal)} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:col-span-2">
+                  <FormField label="Volume" 
+                  required error={formErrors.volume}>
+                    <input 
+                    type="number" 
+                    min= "0"
+                    value={formData.volume} 
+                    onChange={(e) => setFormData((p) => ({ ...p, volume: parseInt(e.target.value) }))} 
+                    className={inputClass(!!formErrors.volume)} />
+                  </FormField>
+                  <FormField label="Nomor" 
+                  required error={formErrors.nomor}>
+                    <input 
+                    type="number"
+                    min= "0" 
+                    value={formData.nomor} 
+                    onChange={(e) => setFormData((p) => ({ ...p, nomor: parseInt(e.target.value) }))} 
+                    className={inputClass(!!formErrors.nomor)} />
                   </FormField>
                 </div>
 
@@ -1169,6 +1282,103 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       <option value="">Pilih...</option>
                       {JENIS_HAKI_OPTIONS.map((j) => <option key={j} value={j}>{j}</option>)}
                     </select>
+                <div className="sm:col-span-2">
+                  <FormField label="Tautan">
+                    <input type="url" value={formData.urlDoi || ""} 
+                    onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
+                    className={inputClass()} />
+                  </FormField>
+                </div>
+                {/* ════════════ BLOK DATA PENULIS ════════════ */}
+                <div className="sm:col-span-2 mt-6 pt-6 border-t border-slate-200 space-y-6">
+                  <h3 className="text-sm text-slate-900" style={{ fontWeight: 600 }}>Tim Penulis</h3>
+                  
+                  {/* 1. Urutan Penulis Utama (Dosen Login) */}
+                  <div className="w-full sm:w-1/2">
+                    <FormField label="Urutan Anda sebagai Penulis" required>
+                      <input type="number" min="1" value={formData.urutanPenulis} onChange={(e) => setFormData(p => ({ ...p, urutanPenulis: parseInt(e.target.value) || "" }))} className={inputClass()} />
+                    </FormField>
+                  </div>
+
+                  {/* 2. Penulis Dosen Lainnya */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm text-slate-700" style={{ fontWeight: 500 }}>Penulis Dosen Lainnya</label>
+                      <button 
+                      onClick={() => handleAddPenulis("dosen")} 
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100" 
+                      style={{ fontWeight: 500 }}><Plus className="w-3.5 h-3.5" /> Tambah Dosen</button>
+                    </div>
+                    {formData.penulisDosen.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada dosen lain yang ditambahkan.</p>}
+                    
+                    {formData.penulisDosen.map((item, index) => (
+                      <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div className="sm:col-span-4"><input type="text" placeholder="Nama Dosen" value={item.nama} onChange={(e) => handleUpdatePenulis("dosen", item.id, "nama", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi (Contoh: Univ. A)" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("dosen", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-2"><input type="number" placeholder="Urutan" value={item.urutan} onChange={(e) => handleUpdatePenulis("dosen", item.id, "urutan", parseInt(e.target.value) || "")} className={inputClass()} /></div>
+                        <div className="sm:col-span-1 flex justify-end"><button onClick={() => handleRemovePenulis("dosen", item.id)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 3. Penulis Mahasiswa */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm text-slate-700" style={{ fontWeight: 500 }}>Penulis Mahasiswa</label>
+                      <button onClick={() => handleAddPenulis("mahasiswa")} 
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100" 
+                      style={{ fontWeight: 500 }}><Plus className="w-3.5 h-3.5" /> Tambah Mahasiswa</button>
+                    </div>
+                    {formData.penulisMahasiswa.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada mahasiswa yang ditambahkan.</p>}
+                    
+                    {formData.penulisMahasiswa.map((item, index) => (
+                      <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div className="sm:col-span-4"><input type="text" placeholder="Nama Mahasiswa" value={item.nama} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "nama", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi / NIM" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
+                        <div className="sm:col-span-2"><input type="number" placeholder="Urutan" value={item.urutan} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "urutan", parseInt(e.target.value) || "")} className={inputClass()} /></div>
+                        <div className="sm:col-span-1 flex justify-end"><button onClick={() => handleRemovePenulis("mahasiswa", item.id)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>)}
+
+              {/* Buku Fields */}
+              {currentJenis === "buku" && (<>
+                {/* Dropdown SISTER khusus untuk Buku */}
+                <FormField label="Kategori Buku" required>
+                  <select value={formData.jenis_publikasi || ""} onChange={(e) => setFormData((p) => ({ ...p, jenis_publikasi: e.target.value }))} className={inputClass()}>
+                    <option value="">Pilih kategori buku...</option>
+                    {KATEGORI_BUKU.map((j) => <option key={j} value={j}>{j}</option>)}
+                  </select>
+                </FormField>
+
+                <FormField label="Penerbit"><input type="text" value={formData.penerbit || ""} onChange={(e) => setFormData((p) => ({ ...p, penerbit: e.target.value }))} placeholder="Nama penerbit" className={inputClass()} /></FormField>
+                <FormField label="ISBN"><input type="text" value={formData.isbn || ""} onChange={(e) => setFormData((p) => ({ ...p, isbn: e.target.value }))} placeholder="978-xxx-xxx" className={inputClass()} /></FormField>
+                <div className="sm:col-span-2">
+                  <FormField label="Tautan">
+                    <input type="url" value={formData.urlDoi || ""} 
+                    onChange={(e) => setFormData((p) => ({ ...p, urlDoi: e.target.value }))} 
+                    className={inputClass()} />
+                  </FormField>
+                </div>
+              </>)}
+
+              {/* HaKI Fields */}
+              {currentJenis === "haki" && (<>
+                <FormField label="Jenis HaKI">
+                  <select value={formData.jenisHaki || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, jenisHaki: e.target.value }))} 
+                  className={inputClass()}>
+                    <option value="">Pilih...</option>
+                    {JENIS_HAKI_OPTIONS.map((j) => <option key={j} value={j}>{j}</option>)}
+                  </select>
+                </FormField>
+                <FormField label="Nomor Sertifikat">
+                  <input type="text" 
+                  value={formData.nomorSertifikat || ""} 
+                  onChange={(e) => setFormData((p) => ({ ...p, nomorSertifikat: e.target.value }))} 
+                  className={inputClass()} />
                   </FormField>
                   <FormField label="Nomor Sertifikat">
                     <input type="text" 
@@ -1195,6 +1405,14 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   <div className="sm:col-span-2"><FormField label="URL Dokumen"><input type="url" value={formData.urlDokumen || ""} onChange={(e) => setFormData((p) => ({ ...p, urlDokumen: e.target.value }))} placeholder="https://drive.google.com/..." className={inputClass()} /></FormField></div>
                 </>)}
               </div>
+                <FormField label="Jenis Prototipe">
+                  <select value={formData.jenisProto || ""} onChange={(e) => setFormData((p) => ({ ...p, jenisProto: e.target.value }))} className={inputClass()}>
+                    <option value="">Pilih...</option>
+                    {JENIS_PROTO_OPTIONS.map((j) => <option key={j} value={j}>{j}</option>)}
+                  </select>
+                </FormField>
+                <div className="sm:col-span-2"><FormField label="URL Dokumen"><input type="url" value={formData.urlDokumen || ""} onChange={(e) => setFormData((p) => ({ ...p, urlDokumen: e.target.value }))} placeholder="https://drive.google.com/..." className={inputClass()} /></FormField></div>
+              </>)}
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-3 flex-wrap">
               <button onClick={() => setViewMode("list")} className="flex items-center gap-2 px-5 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><ChevronLeft className="w-4 h-4" /> Kembali</button>
