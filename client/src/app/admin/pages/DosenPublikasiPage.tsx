@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Plus, Search, Eye, Edit, Trash2, Send, Check,CheckCircle,
+  Plus, Search, Eye, Edit, Trash2, Send, Check, CheckCircle,
   ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Download, BookOpen, 
   AlertCircle, ExternalLink, RefreshCw, Calendar, Clock, Info, X
 } from "lucide-react";
@@ -10,7 +10,9 @@ import { EmptyState } from "../components/EmptyState";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { SkeletonTable } from "../components/SkeletonLoader";
 import { StepperStatus } from "../components/StepperStatus";
+import { SearchableSelect } from "../components/SearchableSelect";
 import { useAuth } from "../context/AuthContext";
+import { Form } from "react-router";
 
 /* ────────────────── Types ────────────────── */
 
@@ -22,99 +24,6 @@ interface PeriodePublikasi {
   semester: string;
   aktif: boolean;
   deadlines?: PeriodeDeadlines;
-}
-
-interface SearchableSelectProps {
-  options: string[];
-  value: string;
-  onChange: (val: string) => void;
-  placeholder?: string;
-  error?: string;
-}
-
-export function SearchableSelect({ options, value, onChange, placeholder = "Pilih kategori...", error }: SearchableSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const filteredOptions = options.filter((opt) =>
-    opt.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="relative w-full" ref={dropdownRef}>
-      {/* Tombol Pemicu */}
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between w-full px-4 py-2.5 text-sm bg-slate-50 border rounded-lg cursor-pointer transition-colors ${
-          error ? "border-red-300 ring-1 ring-red-100" : "border-slate-200 hover:border-slate-300"
-        }`}
-      >
-        <span className={`block truncate ${!value ? "text-slate-400" : "text-slate-700"}`}>
-          {value || placeholder}
-        </span>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-      </div>
-
-      {/* Menu Dropdown */}
-      {isOpen && (
-        <div className="absolute z-[100] w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-          {/* Kolom Pencarian */}
-          <div className="p-3 border-b border-slate-100 bg-slate-50">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                autoFocus
-                placeholder="Cari kategori (cth: jurnal internasional, buku)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Daftar Opsi */}
-          <div className="max-h-64 overflow-y-auto p-2">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    onChange(option);
-                    setIsOpen(false);
-                    setSearchTerm("");
-                  }}
-                  className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    value === option ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-700"
-                  }`}
-                >
-                  <div className="mt-0.5 shrink-0 w-4">
-                    {value === option && <Check className="w-4 h-4 text-blue-600" />}
-                  </div>
-                  <span className="text-sm leading-relaxed whitespace-normal text-left">{option}</span>
-                </div>
-              ))
-            ) : (
-              <div className="p-4 text-sm text-center text-slate-400 italic">
-                Kategori tidak ditemukan.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export interface PeriodeDeadlines {
@@ -151,7 +60,8 @@ interface PublikasiItem {
   jenis: JenisPublikasi;
   judul: string;
   quartile?: number | "";   
-
+  kategori_kegiatan?: string;
+  kategori_capaian_luaran?: string;
   // Artikel
   nama_jurnal?: string;
   doi?: string;
@@ -163,7 +73,7 @@ interface PublikasiItem {
   volume?: number;
   nomor?: number;
   keterangan?: string;
-  kategori_kegiatan?: string;
+  
   // Buku
   penerbit?: string;
   isbn?: string;
@@ -188,6 +98,17 @@ interface PublikasiItem {
 type ViewMode = "periode" | "list" | "form" | "detail";
 
 /* ────────────────── Ref Data ────────────────── */
+
+const KATEGORI_CAPAIAN_LUARAN_MAP = [
+  {id: null, label: "Unknown"},
+  {id: 1, label: "Produk Teknologi Tepat Guna"},
+  {id: 2, label: "Jenis Luaran Lainnya"},
+  {id: 3, label: "Publikasi"},
+  {id: 4, label: "HKI"},
+  {id: 5, label: "Buku"},
+  {id: 6, label: "Pembicara"},
+  {id: 7, label: "Visiting Scientist"}
+];
 
 const KATEGORI_KEGIATAN_MAP = [
   { id: 130600, label: "Hasil kegiatan pengabdian kepada masyarakat yang dipublikasikan di sebuah berkala/jurnal ilmiah pengabdian kepada masyarakat atau teknologi tepat guna, merupakan diseminasi dari luaran program kegiatan pengabdian kepada masyarakat, tiap karya" },
@@ -224,27 +145,27 @@ const KATEGORI_KEGIATAN_MAP = [
 ];
 
 const KATEGORI_JURNAL_ARTIKEL = [
-  "Jurnal internasional bereputasi",
-  "Jurnal internasional",
-  "Jurnal nasional terakreditasi",
-  "Jurnal nasional",
-  "Artikel ilmiah",
-  "Makalah ilmiah",
-  "Tulisan ilmiah",
-  "Prosiding seminar internasional",
-  "Prosiding seminar nasional",
-  "Poster seminar internasional",
-  "Lain-lain"
+  {id: 24, label: "Jurnal internasional bereputasi"},
+  {id: 23, label: "Jurnal internasional"},
+  {id: 22, label: "Jurnal nasional terakreditasi"},
+  {id: 21, label: "Jurnal nasional"},
+  {id: 25, label: "Artikel ilmiah"},
+  {id: 26, label: "Makalah ilmiah"},
+  {id: 27, label: "Tulisan ilmiah"},
+  {id: 32, label: "Prosiding seminar internasional"},
+  {id: 31, label: "Prosiding seminar nasional"},
+  {id: 34, label: "Poster seminar internasional"},
+  {id: 9999, label: "Lain-lain"}
 ];
 
 const KATEGORI_BUKU = [
-  "Buku referensi",
-  "Monograf",
-  "Book chapter internasional",
-  "Book chapter nasional",
-  "Koran/majalah populer/majalah umum",
-  "Hasil penelitian/pemikiran yang tidak dipublikasikan",
-  "Buku lainnya"
+  {id: 12, label: "Buku referensi"},
+  {id: 11, label: "Monograf"},
+  {id: 15, label: "Book chapter internasional"},
+  {id: 14, label: "Book chapter nasional"},
+  {id: 61, label: "Koran/majalah populer/majalah umum"},
+  {id: 71, label: "Hasil penelitian/pemikiran yang tidak dipublikasikan"},
+  {id: 13, label: "Buku lainnya"}
 ];
 
 const JENIS_JURNAL_OPTIONS = ["Sinta 1", "Sinta 2", "Sinta 3", "Sinta 4", "Sinta 5", "Sinta 6", "Scopus Q1", "Scopus Q2", "Scopus Q3", "Scopus Q4", "Prosiding Terindeks", "Prosiding Nasional"];
@@ -445,7 +366,8 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     jenis: jenisParam || "artikel",
     jenis_publikasi: "", 
     quartile: "",
-    kategori_kegiatan: "",        
+    kategori_kegiatan: "",  
+    kategori_capaian_luaran: "",      
     judul: "",
     nama_jurnal: "",
     doi: "", 
@@ -743,7 +665,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             <StepperStatus module="hibah" currentStatus={selectedItem.status} />
             
             {/* KOTAK INFORMASI UTAMA */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 ">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <span className={`text-xs px-2.5 py-0.5 rounded-full ${JENIS_COLORS[selectedItem.jenis]}`} style={{ fontWeight: 600 }}>{JENIS_LABELS[selectedItem.jenis]}</span>
@@ -784,62 +706,59 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     {selectedItem.urlDokumen && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL Dokumen</p><a href={selectedItem.urlDokumen} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
-              </div>
-            </div>
 
-            {/* TIM PENULIS (KHUSUS ARTIKEL) */}
-            {selectedItem.jenis === "artikel" && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Tim Penulis</h3>
-                
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* List Dosen */}
-                    <div>
-                      <p className="text-xs text-slate-400 mb-2">Penulis Dosen Lainnya</p>
-                      {selectedItem.penulisDosen && selectedItem.penulisDosen.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedItem.penulisDosen.map((penulis) => (
-                            <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                              <div>
-                                <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
-                              </div>
-                              <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
-                                Urutan: {penulis.urutan || "-"}
-                              </span>
+                                    <div className="col-span-2 border-t-1 border-slate-300 p-6">
+                    <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Tim Penulis</h3>
+                    
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* List Dosen */}
+                        <div>
+                          <p className="text-xs text-slate-400 mb-2">Penulis Dosen Lainnya</p>
+                          {selectedItem.penulisDosen && selectedItem.penulisDosen.length > 0 ? (
+                            <div className="space-y-2">
+                              {selectedItem.penulisDosen.map((penulis) => (
+                                <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                  <div>
+                                    <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
+                                  </div>
+                                  <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
+                                    Urutan: {penulis.urutan || "-"}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">Tidak ada penulis dosen tambahan.</p>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">Tidak ada penulis dosen tambahan.</p>
-                      )}
-                    </div>
-                    {/* List Mahasiswa */}
-                    <div>
-                      <p className="text-xs text-slate-400 mb-2">Penulis Mahasiswa</p>
-                      {selectedItem.penulisMahasiswa && selectedItem.penulisMahasiswa.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedItem.penulisMahasiswa.map((penulis) => (
-                            <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                              <div>
-                                <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
-                              </div>
-                              <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
-                                Urutan: {penulis.urutan || "-"}
-                              </span>
+                        {/* List Mahasiswa */}
+                        <div>
+                          <p className="text-xs text-slate-400 mb-2">Penulis Mahasiswa</p>
+                          {selectedItem.penulisMahasiswa && selectedItem.penulisMahasiswa.length > 0 ? (
+                            <div className="space-y-2">
+                              {selectedItem.penulisMahasiswa.map((penulis) => (
+                                <div key={penulis.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                  <div>
+                                    <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{penulis.nama}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">{penulis.afiliasi || "-"}</p>
+                                  </div>
+                                  <span className="text-xs text-slate-600 bg-slate-200 px-2.5 py-1 rounded-md" style={{ fontWeight: 600 }}>
+                                    Urutan: {penulis.urutan || "-"}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">Tidak ada penulis mahasiswa.</p>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">Tidak ada penulis mahasiswa.</p>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
               </div>
-            )}
+            </div>
           </div>
           <div className="space-y-5">
             {/* --- AKSI --- */}
@@ -963,17 +882,46 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   </FormField>
                 </div>
 
+                <FormField label="Kategori Capaian Luaran"
+                required error={formErrors.kategori_capaian_luaran}   
+                >
+                  <select
+                  value={formData.kategori_capaian_luaran}
+                  onChange={(selectedLabel) => {
+                    const selectedObj = KATEGORI_CAPAIAN_LUARAN_MAP.find(k => k.label === selectedLabel.target.value);
+                    setFormData((p) => ({ 
+                      ...p, 
+                      kategori_capaian_luaran: selectedLabel.target.value,
+                      id_kategori_capaian_luaran: selectedObj ? selectedObj.id : ""
+                    }));
+                  }}
+                  className={inputClass()}
+                  >
+                    {KATEGORI_CAPAIAN_LUARAN_MAP.map((k) => <option
+                    key={k.label}
+                    value={k.label}>{k.label}</option>)}
+                  </select>
+                </FormField>
+
                 {/* Artikel Fields */}
                 {currentJenis === "artikel" && (<>
                   <FormField label="Jenis Publikasi" required>
                     <select 
                     value={formData.jenis_publikasi || ""} 
-                    onChange={(e) => setFormData((p) => ({ ...p, jenis_publikasi: e.target.value }))} 
-                    className={inputClass()}>
+                    onChange={(selectedLabel) => {
+                    const selectedObj = KATEGORI_JURNAL_ARTIKEL.find(k => k.label === selectedLabel.target.value);
+                    setFormData((p) => ({ 
+                      ...p, 
+                      jenis_publikasi: selectedLabel.target.value,
+                      id_jenis_publikasi: selectedObj ? selectedObj.id : ""
+                    }));
+                  }}
+                  className={inputClass()}
+                  >
                       <option value="">Pilih jenis...</option>
                       {KATEGORI_JURNAL_ARTIKEL.map((j) => <option 
-                      key={j} 
-                      value={j}>{j}</option>)}
+                      key={j.label} 
+                      value={j.label}>{j.label}</option>)}
                     </select>
                   </FormField>
                   <FormField 
@@ -1143,9 +1091,19 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                 {currentJenis === "buku" && (<>
                   {/* Dropdown SISTER khusus untuk Buku */}
                   <FormField label="Kategori Buku" required>
-                    <select value={formData.jenis_publikasi || ""} onChange={(e) => setFormData((p) => ({ ...p, jenis_publikasi: e.target.value }))} className={inputClass()}>
+                    <select 
+                    value={formData.jenis_publikasi || ""} 
+                    onChange={(selectedLabel) => {
+                    const selectedObj = KATEGORI_BUKU.find(k => k.label === selectedLabel.target.value);
+                    setFormData((p) => ({ 
+                      ...p, 
+                      jenis_publikasi: selectedLabel.target.value,
+                      id_jenis_publikasi: selectedObj ? selectedObj.id : ""
+                    }));
+                  }}
+                    className={inputClass()}>
                       <option value="">Pilih kategori buku...</option>
-                      {KATEGORI_BUKU.map((j) => <option key={j} value={j}>{j}</option>)}
+                      {KATEGORI_BUKU.map((j) => <option key={j.label} value={j.label}>{j.label}</option>)}
                     </select>
                   </FormField>
 

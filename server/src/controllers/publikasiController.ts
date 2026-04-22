@@ -65,6 +65,19 @@ export class PublikasiController {
 
             const data = req.body;
 
+            const jenisPublikasiText = (data.jenis_publikasi || "").toLowerCase();
+            
+            let isProsiding = 0;
+            let isSeminar = 0;
+
+            if (jenisPublikasiText.includes("prosiding")) {
+                isProsiding = 1;
+            } 
+            
+            if (jenisPublikasiText.includes("seminar")) {
+                isSeminar = 1;
+            }
+
             const sharedId = uuidv4(); 
 
             const queryHeader = `
@@ -81,12 +94,11 @@ export class PublikasiController {
                 data.id_user
             ]);
 
-
             const queryDetail = `
                 INSERT INTO detail_publikasi (
                     id, kategori_kegiatan, judul, jenis_publikasi, tanggal, id_kategori_kegiatan, id_jenis_publikasi, kategori_capaian_luaran,
-                    penerbit, isbn, nama_jurnal, doi, issn, volume, nomor, halaman, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id_kategori_capaian_luaran, penerbit, isbn, nama_jurnal, doi, issn, volume, nomor, halaman, status, seminar, prosiding
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             await connection.execute(queryDetail, [
                 sharedId,
@@ -96,7 +108,8 @@ export class PublikasiController {
                 data.tanggal,
                 data.id_kategori_kegiatan || 1,
                 data.id_jenis_publikasi || 1,
-                data.kategori_capaian_luaran || "Test",
+                data.kategori_capaian_luaran || "Unknown",
+                data.id_kategori_capaian_luaran || null,
                 data.penerbit || null,
                 data.isbn || null,
                 data.nama_jurnal || null,
@@ -105,10 +118,10 @@ export class PublikasiController {
                 data.volume || null,
                 data.nomor || null,
                 data.halaman || null,
-                data.status
+                data.status,
+                isSeminar,   
+                isProsiding 
             ]);
-
-            
 
             await connection.commit(); 
             return res.status(201).json({ status: 'success', message: 'Data berhasil disimpan' });
