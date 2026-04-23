@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Plus, Search, Eye, Edit, Trash2, Send, Check, CheckCircle,
+  Plus, Search, Eye, Edit, Trash2, Send, FileText, CheckCircle,
   ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Download, BookOpen, 
   AlertCircle, ExternalLink, RefreshCw, Calendar, Clock, Info, X
 } from "lucide-react";
@@ -11,6 +11,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { SkeletonTable } from "../components/SkeletonLoader";
 import { StepperStatus } from "../components/StepperStatus";
 import { SearchableSelect } from "../components/SearchableSelect";
+import { SyncSisterModal } from "../components/SyncSisterModal";
 import { useAuth } from "../context/AuthContext";
 import { Form } from "react-router";
 
@@ -26,7 +27,7 @@ interface PeriodePublikasi {
   deadlines?: PeriodeDeadlines;
 }
 
-export interface PeriodeDeadlines {
+interface PeriodeDeadlines {
   submissionStart: string | null;
   submissionDeadline: string | null;
   revisionDeadline: string | null;
@@ -37,7 +38,7 @@ export interface PeriodeDeadlines {
   keterangan: string | null;
 }
 
-export interface RiwayatAktivitas {
+interface RiwayatAktivitas {
   id: string;
   tanggal: string; 
   status: string;
@@ -46,11 +47,22 @@ export interface RiwayatAktivitas {
   catatan?: string | null;
 }
 
-export interface PenulisTambahan {
+interface PenulisTambahan {
   id: string;
   nama: string;
   afiliasi: string;
   urutan: number | "";
+}
+
+interface DokumenPublikasi {
+  id: string;
+  nama: string;
+  jenis_dokumen: string;
+  nama_file: string;
+  jenis_file: string;
+  tanggal_upload: Date;
+  tautan: string;
+  keterangan: string;
 }
 
 interface PublikasiItem {
@@ -73,7 +85,6 @@ interface PublikasiItem {
   volume?: number;
   nomor?: number;
   keterangan?: string;
-  
   // Buku
   penerbit?: string;
   isbn?: string;
@@ -93,6 +104,7 @@ interface PublikasiItem {
   penulisDosen: PenulisTambahan[];
   penulisMahasiswa: PenulisTambahan[];
   riwayat?: RiwayatAktivitas[];
+  dokumen: DokumenPublikasi[];
 }
 
 type ViewMode = "periode" | "list" | "form" | "detail";
@@ -253,6 +265,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [isSyncing, setIsSyncing] = useState(false);
   const [deadlinePopup, setDeadlinePopup] = useState<PeriodePublikasi | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const perPage = 8;
 
   const isSubmissionOpen = (periode: PeriodePublikasi | null) => {
@@ -385,7 +398,8 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     tanggal: new Date().toISOString().split("T")[0],
     urutanPenulis: "",
     penulisDosen: [],
-    penulisMahasiswa: []
+    penulisMahasiswa: [],
+    dokumen: []
   });
     const fetchPublikasi = async () => {
       try {
@@ -408,6 +422,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
 
             const penulisDosen: PenulisTambahan[] = [];
             const penulisMahasiswa: PenulisTambahan[] = [];
+            const dokumen: DokumenPublikasi[] = [];
 
             if (item.tim_penulis && Array.isArray(item.tim_penulis)) {
                 item.tim_penulis.forEach((p: any) => {
@@ -428,6 +443,21 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                         });
                     }
                 });
+            }
+
+            if(item.dokumen && Array.isArray(item.dokumen)){
+              item.dokumen.forEach((d: any) => {
+                dokumen.push({
+                  id: d.id || Math.random().toString(),
+                  nama: d.nama || "Unknown",
+                  jenis_dokumen: d.jenis_dokumen || "-",
+                  nama_file: d.nama_file || "Unknown",
+                  jenis_file: d.jenis_file || "-",
+                  tanggal_upload: d.tanggal_upload || "-",
+                  tautan: d.tautan || "-",
+                  keterangan: d.keterangan || "-"
+                })
+              })
             }
 
             return {
@@ -706,8 +736,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     {selectedItem.urlDokumen && <div className="col-span-2"><p className="text-xs text-slate-400 mb-0.5">URL Dokumen</p><a href={selectedItem.urlDokumen} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Lihat <ExternalLink className="w-3 h-3" /></a></div>}
                   </>
                 )}
-
-                                    <div className="col-span-2 border-t-1 border-slate-300 p-6">
+                  <div className="col-span-2 border-t-[0.5px] border-slate-200 p-6">
                     <h3 className="text-sm text-slate-900 mb-5" style={{ fontWeight: 600 }}>Tim Penulis</h3>
                     
                     <div className="space-y-5">
@@ -759,6 +788,87 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   </div>
               </div>
             </div>
+          {/* DOKUMEN */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-sm text-slate-900" style={{ fontWeight: 600 }}>Dokumen Pendukung</h3>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  {selectedItem.dokumen && selectedItem.dokumen.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedItem.dokumen.map((d: any) => (
+                        <div 
+                          key={d.id} 
+                          title={d.tautan ? `Buka: ${d.tautan}` : "Dokumen ini tidak memiliki tautan"}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-colors"
+                        >
+                          <div className="flex items-start gap-3.5">
+                            {/* Ikon File Dokumen */}
+                            <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-white border border-slate-200 rounded-lg shadow-sm">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                            </div>
+                            
+                            {/* Informasi Dokumen */}
+                            <div>
+                              <p className="text-sm text-slate-800" style={{ fontWeight: 600 }}>{d.nama}</p>
+                              
+                              <div className="flex items-center flex-wrap gap-2 mt-1.5">
+                                <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-700 rounded-md" style={{ fontWeight: 600 }}>
+                                  {d.jenis_dokumen || "Dokumen"}
+                                </span>
+                                {d.jenis_file && (
+                                  <>
+                                    <span className="text-slate-300 text-xs">•</span>
+                                    <span className="text-[11px] text-slate-500 font-mono uppercase">{d.jenis_file}</span>
+                                  </>
+                                )}
+                                {d.tanggal_upload && (
+                                  <>
+                                    <span className="text-slate-300 text-xs">•</span>
+                                    <span className="text-[11px] text-slate-500">{d.tanggal_upload}</span>
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Keterangan Dokumen (Jika ada) */}
+                              {d.keterangan && (
+                                <p className="text-xs text-slate-500 mt-2 italic leading-relaxed">
+                                  "{d.keterangan}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Tombol Aksi Tautan */}
+                          {d.tautan && (
+                            <div className="flex-shrink-0 self-start sm:self-center ml-13 sm:ml-0">
+                              <a 
+                                href={d.tautan} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs text-blue-700 bg-blue-100/50 hover:bg-blue-100 rounded-lg transition-colors"
+                                style={{ fontWeight: 600 }}
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Buka Tautan
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
+                      <p className="text-xs text-slate-400 italic">Tidak ada dokumen tambahan yang dilampirkan.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+          </div>
           </div>
           <div className="space-y-5">
             {/* --- AKSI --- */}
@@ -1197,7 +1307,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               </select>
               {selectedPeriode.aktif && (              
               <button 
-                onClick={handleSync}
+                onClick={() => setIsSyncModalOpen(true)}
                 disabled={isSyncing}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                 style={{ fontWeight: 500 }}
@@ -1278,6 +1388,16 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
         )}
         <ConfirmModal {...confirmModal} isOpen={confirmModal.open} onClose={() => setConfirmModal((p) => ({ ...p, open: false }))} />
         {toast.show && <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border ${toast.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}><CheckCircle className="w-4 h-4" /><span className="text-sm" style={{ fontWeight: 500 }}>{toast.message}</span></div>}
+        <SyncSisterModal 
+          isOpen={isSyncModalOpen} 
+          onClose={() => setIsSyncModalOpen(false)}
+          dosenId={user?.id}
+          localData={publikasiList} // Kirim data lokal untuk di-render di mode POST
+          onSuccess={() => {
+            showToast("Sinkronisasi SISTER berhasil!", "success");
+            fetchPublikasi(); // Refresh data utama
+          }}
+        />
       </PageWrapper>
     );
   }

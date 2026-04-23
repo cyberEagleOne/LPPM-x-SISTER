@@ -29,7 +29,23 @@ export class PublikasiController {
                     )
                     FROM publikasi_penulis pp
                     WHERE pp.id_publikasi = p.id
-                ) AS tim_penulis
+                ) AS tim_penulis,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', pd.id,
+                            'nama', pd.nama,
+                            'jenis_dokumen', pd.jenis_dokumen,
+                            'nama_file', pd.nama_file,
+                            'jenis_file', pd.jenis_file,
+                            'tanggal_upload', pd.tanggal_upload,
+                            'tautan', pd.tautan,
+                            'keterangan', pd.keterangan
+                        )
+                    )
+                    FROM publikasi_dokumen pd
+                    WHERE pd.id_publikasi = p.id
+                ) AS dokumen
             FROM publikasi p
             LEFT JOIN detail_publikasi dp ON p.id = dp.id
             WHERE p.id_user = ?`;
@@ -96,14 +112,15 @@ export class PublikasiController {
 
             const queryDetail = `
                 INSERT INTO detail_publikasi (
-                    id, kategori_kegiatan, judul, jenis_publikasi, tanggal, id_kategori_kegiatan, id_jenis_publikasi, kategori_capaian_luaran,
+                    id, kategori_kegiatan, judul, quartile, jenis_publikasi, tanggal, id_kategori_kegiatan, id_jenis_publikasi, kategori_capaian_luaran,
                     id_kategori_capaian_luaran, penerbit, isbn, nama_jurnal, doi, issn, volume, nomor, halaman, status, seminar, prosiding
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             await connection.execute(queryDetail, [
                 sharedId,
                 data.kategori_kegiatan || "Test",
                 data.judul,
+                data.quartile || null,
                 data.jenis_publikasi,
                 data.tanggal,
                 data.id_kategori_kegiatan || 1,
