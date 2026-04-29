@@ -17,7 +17,7 @@
   },
   "include": [
     "src/**/*"
-  ],
+, "src/config/apiConfig.ts", "src/config/models.ts"  ],
   "exclude": [
     "node_modules",
     "dist"

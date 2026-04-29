@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import pool from "../config/database";
 import { v4 as uuidv4 } from "uuid";
+import { syncToDB } from "../services/syncToDb";
 
 export class PublikasiController {
     // --- Fungsi Lihat Data (GET) ---
@@ -230,6 +231,46 @@ export class PublikasiController {
             return res.status(500).json({ status: 'error', message: 'Gagal menghapus data' });
         } finally {
             connection.release();
+        }
+    }
+
+    // --- Fungsi Menarik Data dari API SISTER ---
+    static async getSisterPublikasi(req: Request, res: Response) {
+        try {
+            const dosen_id = req.query.dosen_id;
+
+            if (!dosen_id || typeof dosen_id !== 'string') {
+                return res.status(400).json({ status: 'error', message: 'Dosen ID diperlukan' });
+            }
+            const rawSisterData = await syncToDB.syncPublikasiEachSDM(dosen_id);
+
+            const [localPublikasi]: any = await pool.execute(
+                'SELECT id FROM publikasi WHERE id_user = ? AND id IS NOT NULL', 
+                [dosen_id]
+            );
+
+            const existingSisterIds = localPublikasi.map((row: any) => row.id);
+
+            const formattedData = rawSisterData.map((item) => {
+                const idItem = item.id || item.id_publikasi;
+                return {
+                    ...item,
+                    id: idItem,
+                    existsLocally: existingSisterIds.includes(item.id) 
+                };
+            });
+            return res.status(200).json({
+                status: 'success',
+                message: 'Berhasil menarik data SISTER',
+                data: formattedData
+            });
+
+        } catch (error) {
+            console.error("Error getSisterPublikasi:", error);
+            return res.status(500).json({ 
+                status: 'error', 
+                message: 'Gagal komunikasi dengan server SISTER' 
+            });
         }
     }
 }

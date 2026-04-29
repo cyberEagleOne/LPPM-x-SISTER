@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, DownloadCloud, UploadCloud, Search, Eye, Check, AlertTriangle } from "lucide-react";
-import { SkeletonTable } from "./SkeletonLoader"; // Asumsi kamu punya ini
+import { X, DownloadCloud, UploadCloud, Search, Eye, AlertTriangle } from "lucide-react";
+import { SkeletonTable } from "./SkeletonLoader";
 
 interface SyncSisterModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ export function SyncSisterModal({ isOpen, onClose, dosenId, localData, onSuccess
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailItem, setDetailItem] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hideLocal, setHideLocal] = useState(false);
   
   // State untuk konfirmasi timpa data (override)
   const [showConfirm, setShowConfirm] = useState(false);
@@ -36,41 +37,45 @@ export function SyncSisterModal({ isOpen, onClose, dosenId, localData, onSuccess
     }
   }, [isOpen]);
 
-    const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
+  const filteredItems = useMemo(() => {
     return items.filter(item => {
-        const judul = (item.judul || "").toLowerCase();
-        const jenis = (item.jenis_publikasi || "").toLowerCase();
-        const query = searchQuery.toLowerCase();
-        
-        return judul.includes(query) || jenis.includes(query);
+      const judul = (item.judul || "").toLowerCase();
+      const jenis = (item.jenis || "").toLowerCase();
+      const query = searchQuery.toLowerCase();
+      const isMatchSearch = !searchQuery.trim() || judul.includes(query) || jenis.includes(query);
+
+      const isMatchLocalFilter = !(mode === "get" && hideLocal && item.existsLocally);
+
+      return isMatchSearch && isMatchLocalFilter;
     });
-    }, [items, searchQuery]);
+  }, [items, searchQuery, hideLocal, mode]);
 
   if (!isOpen) return null;
 
-  // --- LOGIKA FETCH DATA ---
-const handleSelectMode = async (selectedMode: "get" | "post") => {
+// --- LOGIKA FETCH DATA ---
+  const handleSelectMode = async (selectedMode: "get" | "post") => {
     setMode(selectedMode);
     setSearchQuery("");
     setLoading(true);
     
     try {
       if (selectedMode === "get") {
-        // Simulasi nunggu 1 detik menggunakan Promise
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setItems([
-          { id: "S-001", judul: "Jurnal AI dari SISTER", jenis_publikasi: "Artikel", tahun: "2026", existsLocally: true },
-          { id: "S-002", judul: "Buku Machine Learning SISTER", jenis_publikasi: "Buku", tahun: "2025", existsLocally: false },
-        ]);
+        const response = await fetch(`http://localhost:3000/api/sdm/publikasi/sister?dosen_id=${dosenId}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          setItems(result.data);
+        } else {
+          throw new Error(result.message);
+        }
       } else {
         setItems(localData);
       }
-    } catch (error) {
-      alert("Gagal mengambil data");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Gagal mengambil data dari server SISTER.");
     } finally {
-      setLoading(false); // Sekarang Loading akan mati SETELAH 1 detik berlalu
+      setLoading(false);
     }
   };
 
@@ -206,23 +211,41 @@ const toggleSelectAll = () => {
             <div>
                 <p className="text-xs text-slate-500">Tahun/Tanggal</p>
                 <p className="font-medium">{detailItem.tahun || detailItem.tanggalDibuat || detailItem.tanggal || "-"}</p>
-              {/* Tambahkan detail lainnya sesuai kebutuhan */}
+              {/* detail lainnya ditambahin nanti*/}
             </div>
           </div>
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden">
-            
-            {/* 👇 3. INPUT PENCARIAN 👇 */}
+
             <div className="p-4 border-b border-slate-100 bg-white">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Cari berdasarkan judul atau jenis publikasi..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
+                <div className="p-4 border-b border-slate-100 bg-white flex flex-col gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Cari berdasarkan judul atau jenis publikasi..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Checkbox Filter*/}
+                  {mode === "get" && (
+                    <label className="flex items-center gap-2 self-start cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={hideLocal}
+                        onChange={(e) => setHideLocal(e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-colors"
+                      />
+                      <span className="text-xs text-slate-600 font-medium group-hover:text-slate-800 transition-colors">
+                        Sembunyikan publikasi yang sudah ada di database lokal
+                      </span>
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -251,7 +274,6 @@ const toggleSelectAll = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {/* 👇 Ganti items.map menjadi filteredItems.map 👇 */}
                     {filteredItems.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50/50">
                         <td className="p-3">

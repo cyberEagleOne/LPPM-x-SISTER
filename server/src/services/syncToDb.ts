@@ -72,7 +72,7 @@ export class syncToDB {
         }
     }
 
-    static async syncPenelitianEachSDM(): Promise<void> {
+    static async syncPenelitianAllSDM(): Promise<void> {
         try {
             console.log("Menarik data SDM dari SISTER...");
             const dataSDM = await apiReader.fetchSDM();
@@ -248,7 +248,7 @@ export class syncToDB {
         }
     }
 
-    static async syncPublikasiEachSDM(): Promise<void> {
+    static async syncPublikasiAllSDM(): Promise<void> {
         try {
             console.log("Menarik data SDM dari SISTER untuk sinkronisasi Publikasi...");
             const dataSDM = await apiReader.fetchSDM();
@@ -424,6 +424,43 @@ export class syncToDB {
             console.error("Terjadi kesalahan saat sinkronisasi publikasi ke DB:", error.message);
         }
     }
+
+    static async syncPublikasiEachSDM(id_sdm: string): Promise<any[]> {
+        try {
+            console.log(`Menarik data list publikasi SISTER untuk dosen ID: ${id_sdm}`);
+
+            const listPublikasi = await apiReader.fetchListPublikasi(id_sdm);
+            
+            if (!listPublikasi || listPublikasi.length === 0) {
+                console.log("Tidak ada publikasi ditemukan di SISTER.");
+                return [];
+            }
+
+            const hasilPublikasi: any[] = [];
+
+            console.log(`Mengambil detail untuk ${listPublikasi.length} publikasi...`);
+            for (const lp of listPublikasi) {
+                const idPublikasi = lp.id || lp.id_publikasi;
+                if (!idPublikasi) continue;
+
+                const detail_publikasi = await apiReader.fetchDetailPublikasi(idPublikasi);
+                
+                if (detail_publikasi) {
+                    hasilPublikasi.push({
+                        ...lp,
+                        ...detail_publikasi
+                    });
+                }
+            }
+
+            console.log("Selesai mengambil data SISTER.");
+            return hasilPublikasi;
+
+        } catch (error: any) {
+            console.error("Terjadi kesalahan saat menarik data SISTER:", error.message);
+            throw error;
+        }
+    }
 }
 
 if (require.main === module) {
@@ -434,10 +471,10 @@ if (require.main === module) {
             await syncToDB.syncSDM();
             
             console.log("Memulai sinkronisasi penelitian...");
-            await syncToDB.syncPenelitianEachSDM();
+            await syncToDB.syncPenelitianAllSDM();
 
             console.log("Memulai sinkronisasi publikasi...");
-            await syncToDB.syncPublikasiEachSDM();
+            await syncToDB.syncPublikasiAllSDM();
 
             console.log("Sinkronisasi selesai!");
             process.exit(0); 
