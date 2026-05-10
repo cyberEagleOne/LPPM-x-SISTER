@@ -252,7 +252,7 @@ export class PublikasiController {
             const existingSisterIds = localPublikasi.map((row: any) => row.id);
 
             const formattedData = rawSisterData.map((item) => {
-                const idItem = item.id || item.id_publikasi;
+                const idItem = item.id;
                 return {
                     ...item,
                     id: idItem,

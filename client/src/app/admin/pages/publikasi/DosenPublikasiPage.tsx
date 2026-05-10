@@ -4,21 +4,21 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Download, BookOpen, 
   AlertCircle, ExternalLink, RefreshCw, Calendar, Clock, Info, X
 } from "lucide-react";
-import { PageWrapper } from "../components/PageWrapper";
-import { StatusBadge, type StatusType } from "../components/StatusBadge";
-import { EmptyState } from "../components/EmptyState";
-import { ConfirmModal } from "../components/ConfirmModal";
-import { SkeletonTable } from "../components/SkeletonLoader";
-import { StepperStatus } from "../components/StepperStatus";
-import { SearchableSelect } from "../components/SearchableSelect";
-import { SyncSisterModal } from "../components/SyncSisterModal";
-import { useAuth } from "../context/AuthContext";
+import { PageWrapper } from "../../components/PageWrapper";
+import { StatusBadge, type StatusType } from "../../components/StatusBadge";
+import { EmptyState } from "../../components/EmptyState";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { SkeletonTable } from "../../components/SkeletonLoader";
+import { StepperStatus } from "../../components/StepperStatus";
+import { SearchableSelect } from "../../components/SearchableSelect";
+import { SyncSisterModal } from "../../components/SyncSisterModal";
+import { useAuth } from "../../context/AuthContext";
 
 /* ────────────────── Types ────────────────── */
 
-type JenisPublikasi = "artikel" | "buku" | "haki" | "prototipe";
+export type JenisPublikasi = "artikel" | "buku" | "haki" | "prototipe";
 
-interface PeriodePublikasi {
+export interface PeriodePublikasi {
   id: string;
   tahun: string;
   semester: string;
@@ -26,7 +26,7 @@ interface PeriodePublikasi {
   deadlines?: PeriodeDeadlines;
 }
 
-interface PeriodeDeadlines {
+export interface PeriodeDeadlines {
   submissionStart: string | null;
   submissionDeadline: string | null;
   revisionDeadline: string | null;
@@ -37,7 +37,7 @@ interface PeriodeDeadlines {
   keterangan: string | null;
 }
 
-interface RiwayatAktivitas {
+export interface RiwayatAktivitas {
   id: string;
   tanggal: string; 
   status: string;
@@ -46,14 +46,14 @@ interface RiwayatAktivitas {
   catatan?: string | null;
 }
 
-interface PenulisTambahan {
+export interface PenulisTambahan {
   id: string;
   nama: string;
   afiliasi: string;
   urutan: number | "";
 }
 
-interface DokumenPublikasi {
+export interface DokumenPublikasi {
   id: string;
   nama: string;
   jenis_dokumen: string;
@@ -64,7 +64,7 @@ interface DokumenPublikasi {
   keterangan: string;
 }
 
-interface PublikasiItem {
+export interface PublikasiItem {
   id: string;
   periodeId: string;
   jenis_publikasi?: string; 
@@ -108,9 +108,9 @@ interface PublikasiItem {
 
 type ViewMode = "periode" | "list" | "form" | "detail";
 
-/* ────────────────── Ref Data ────────────────── */
+/* ────────────────── Constants ────────────────── */
 
-const KATEGORI_CAPAIAN_LUARAN_MAP = [
+export const KATEGORI_CAPAIAN_LUARAN_MAP = [
   {id: null, label: "Unknown"},
   {id: 1, label: "Produk Teknologi Tepat Guna"},
   {id: 2, label: "Jenis Luaran Lainnya"},
@@ -121,7 +121,7 @@ const KATEGORI_CAPAIAN_LUARAN_MAP = [
   {id: 7, label: "Visiting Scientist"}
 ];
 
-const KATEGORI_KEGIATAN_MAP = [
+export const KATEGORI_KEGIATAN_MAP = [
   { id: 130600, label: "Hasil kegiatan pengabdian kepada masyarakat yang dipublikasikan di sebuah berkala/jurnal ilmiah pengabdian kepada masyarakat atau teknologi tepat guna, merupakan diseminasi dari luaran program kegiatan pengabdian kepada masyarakat, tiap karya" },
   { id: 120903, label: "Hasil penelitian atau hasil pemikiran yang Dipresentasikan secara oral dan dimuat dalam prosiding yang dipublikasikan (ber ISSN/ISBN): Internasional" },
   { id: 120901, label: "Hasil penelitian atau hasil pemikiran yang Dipresentasikan secara oral dan dimuat dalam prosiding yang dipublikasikan (ber ISSN/ISBN): Internasional terindeks pada Scimagojr dan Scopus" },
@@ -155,7 +155,7 @@ const KATEGORI_KEGIATAN_MAP = [
   { id: 120300, label: "Mengedit/menyunting karya ilmiah dalam bentuk buku yang diterbitkan (ber ISBN)" }
 ];
 
-const KATEGORI_JURNAL_ARTIKEL = [
+export const KATEGORI_JURNAL_ARTIKEL = [
   {id: 24, label: "Jurnal internasional bereputasi"},
   {id: 23, label: "Jurnal internasional"},
   {id: 22, label: "Jurnal nasional terakreditasi"},
@@ -169,7 +169,7 @@ const KATEGORI_JURNAL_ARTIKEL = [
   {id: 9999, label: "Lain-lain"}
 ];
 
-const KATEGORI_BUKU = [
+export const KATEGORI_BUKU = [
   {id: 12, label: "Buku referensi"},
   {id: 11, label: "Monograf"},
   {id: 15, label: "Book chapter internasional"},
@@ -179,11 +179,11 @@ const KATEGORI_BUKU = [
   {id: 13, label: "Buku lainnya"}
 ];
 
-const JENIS_JURNAL_OPTIONS = ["Sinta 1", "Sinta 2", "Sinta 3", "Sinta 4", "Sinta 5", "Sinta 6", "Scopus Q1", "Scopus Q2", "Scopus Q3", "Scopus Q4", "Prosiding Terindeks", "Prosiding Nasional"];
-const JENIS_HAKI_OPTIONS = ["Hak Cipta", "Paten", "Paten Sederhana", "Merek", "Desain Industri"];
-const JENIS_PROTO_OPTIONS = ["Perangkat Lunak", "Perangkat Keras", "Modul", "Sistem", "Alat"];
+export const JENIS_JURNAL_OPTIONS = ["Sinta 1", "Sinta 2", "Sinta 3", "Sinta 4", "Sinta 5", "Sinta 6", "Scopus Q1", "Scopus Q2", "Scopus Q3", "Scopus Q4", "Prosiding Terindeks", "Prosiding Nasional"];
+export const JENIS_HAKI_OPTIONS = ["Hak Cipta", "Paten", "Paten Sederhana", "Merek", "Desain Industri"];
+export const JENIS_PROTO_OPTIONS = ["Perangkat Lunak", "Perangkat Keras", "Modul", "Sistem", "Alat"];
 
-const NEW_PERIODE: PeriodePublikasi[] = [
+export const NEW_PERIODE: PeriodePublikasi[] = [
 { 
     id: "2025/2026-Genap", 
     tahun: "2025/2026", 
@@ -204,69 +204,37 @@ const NEW_PERIODE: PeriodePublikasi[] = [
 ]; 
 
 
-/*
-const MOCK_PUBLIKASI: PublikasiItem[] = [
-  { id: "PUB-001", periodeId: "PP-001", jenis: "artikel", judul: "AI & Education Impact Study", nama_jurnal: "Journal of AI Research", doi: "https://doi.org/10.123", jenisJurnal: "Sinta 1", tahunTerbit: "2026", status: "approved", tanggalDibuat: "2026-02-01" },
-  { id: "PUB-002", periodeId: "PP-001", jenis: "artikel", judul: "IoT Smart Campus Framework", nama_jurnal: "Electronics Journal", doi: "", jenisJurnal: "Scopus Q2", tahunTerbit: "2026", status: "draft", tanggalDibuat: "2026-03-01" },
-  { id: "PUB-003", periodeId: "PP-001", jenis: "buku", judul: "Pengantar Kecerdasan Buatan", penerbit: "Gramedia", isbn: "978-602-12345-6", tahunTerbit: "2025", status: "approved", tanggalDibuat: "2025-11-01" },
-  { id: "PUB-004", periodeId: "PP-001", jenis: "haki", judul: "Sistem Monitor Kualitas Udara IoT", nomorSertifikat: "EC00202300123", jenisHaki: "Hak Cipta", tahunTerbit: "2026", status: "submitted", tanggalDibuat: "2026-01-15" },
-  { id: "PUB-005", periodeId: "PP-002", jenis: "prototipe", judul: "Alat Ukur Kadar Air Tanah Otomatis", namaProto: "Soil Moisture Sensor V1", jenisProto: "Perangkat Keras", urlDokumen: "https://drive.google.com/proto", tahunTerbit: "2025", status: "verified", tanggalDibuat: "2025-08-01" },
-]; */
-
-/* ────────────────── Labels ────────────────── */
-
-const JENIS_LABELS: Record<JenisPublikasi, string> = {
+export const JENIS_LABELS: Record<JenisPublikasi, string> = {
   artikel: "Artikel",
   buku: "Buku",
   haki: "Kekayaan Intelektual (KI)",
   prototipe: "Prototipe",
 };
 
-const JENIS_COLORS: Record<JenisPublikasi, string> = {
+export const JENIS_COLORS: Record<JenisPublikasi, string> = {
   artikel: "bg-blue-100 text-blue-700",
   buku: "bg-emerald-100 text-emerald-700",
   haki: "bg-purple-100 text-purple-700",
   prototipe: "bg-amber-100 text-amber-700",
 };
 
-  const inputClass = (hasError?: boolean) =>
-    `w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-all bg-slate-50/50 placeholder:text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed ${
-      hasError ? "border-red-300 focus:ring-red-200" : "border-slate-200 focus:ring-[#E30613]/20 focus:border-[#E30613]/40"
-    }`;
 
-  const FormField = ({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) => (
-    <div>
-      <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 500 }}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {children}
-      {error && <p className="flex items-center gap-1 text-xs text-red-500 mt-1"><AlertCircle className="w-3 h-3" /> {error}</p>}
-    </div>
-  );
+export const inputClass = (hasError?: boolean) =>
+  `w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-all bg-slate-50/50 placeholder:text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed ${
+    hasError ? "border-red-300 focus:ring-red-200" : "border-slate-200 focus:ring-[#E30613]/20 focus:border-[#E30613]/40"
+}`;
 
-/* ────────────────── Main Component ────────────────── */
+export const FormField = ({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 500 }}>
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    {children}
+    {error && <p className="flex items-center gap-1 text-xs text-red-500 mt-1"><AlertCircle className="w-3 h-3" /> {error}</p>}
+  </div>
+);
 
-export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi }) {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("periode");
-  const [selectedPeriode, setSelectedPeriode] = useState<PeriodePublikasi | null>(null);
-  const [selectedItem, setSelectedItem] = useState<PublikasiItem | null>(null);
-  const [editingItem, setEditingItem] = useState<PublikasiItem | null>(null);
-  const [publikasiList, setPublikasiList] = useState<PublikasiItem[]>([]);
-  const [periodeList, setPeriodeList] = useState<PeriodePublikasi[]>([]);
-  const [filterJenis, setFilterJenis] = useState<JenisPublikasi | "semua">(jenisParam || "semua");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showEmptyPeriods, setShowEmptyPeriods] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const formRef = useRef<HTMLDivElement>(null);
-  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "danger" as "danger" | "warning" | "success", onConfirm: () => {} });
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [deadlinePopup, setDeadlinePopup] = useState<PeriodePublikasi | null>(null);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const perPage = 8;
-
+/* ────────────────── Utils ────────────────── */
   const isSubmissionOpen = (periode: PeriodePublikasi | null) => {
     if (!periode || !periode.aktif) return false;
 
@@ -280,33 +248,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     return now >= start && now <= end;
   };
 
-  const handleSync = async () => {
-    try {
-      setIsSyncing(true);
-      
-      // for now
-      const response = await fetch(`http://localhost:3000/api/sdm/publikasi/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_user: user?.id }) 
-      });
-      
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        showToast("Sinkronisasi SISTER berhasil", "success");
-        await fetchPublikasi(); 
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error: any) {
-      showToast(error.message || "Gagal melakukan sinkronisasi", "error");
-    } finally {
-      setIsSyncing(false); 
-    }
-  };
-
-  const getJenisFromJenisPublikasi = (jp?: string): JenisPublikasi => {
+    const getJenisFromJenisPublikasi = (jp?: string): JenisPublikasi => {
     const text = (jp || "").toLowerCase();
 
     if (
@@ -328,7 +270,6 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
 
     return "artikel"; 
   };
-  
 
   const getPeriodeFromDate = (tanggalString: string) => {
     if (!tanggalString || tanggalString.toLowerCase() === "unknown") {
@@ -359,7 +300,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     return `${tahunAjaran}-${semester}`;
   };
 
-  const formatTanggalIndo = (tanggalString: string) => {
+    const formatTanggalIndo = (tanggalString: string) => {
     if (!tanggalString || tanggalString.toLowerCase() === "unknown") return "Tidak Diketahui";
     if (/^\d{4}$/.test(tanggalString)) return tanggalString;  
     
@@ -371,6 +312,56 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
       month: 'long',
       year: 'numeric'
     }).format(date);
+  };
+
+
+/* ────────────────── Main Component ────────────────── */
+
+export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi }) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("periode");
+  const [selectedPeriode, setSelectedPeriode] = useState<PeriodePublikasi | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PublikasiItem | null>(null);
+  const [editingItem, setEditingItem] = useState<PublikasiItem | null>(null);
+  const [publikasiList, setPublikasiList] = useState<PublikasiItem[]>([]);
+  const [periodeList, setPeriodeList] = useState<PeriodePublikasi[]>([]);
+  const [filterJenis, setFilterJenis] = useState<JenisPublikasi | "semua">(jenisParam || "semua");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showEmptyPeriods, setShowEmptyPeriods] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const formRef = useRef<HTMLDivElement>(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "danger" as "danger" | "warning" | "success", onConfirm: () => {} });
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [deadlinePopup, setDeadlinePopup] = useState<PeriodePublikasi | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const perPage = 8;
+
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+      
+      // for now
+      const response = await fetch(`http://localhost:3000/api/sdm/publikasi/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_user: user?.id }) 
+      });
+      
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showToast("Sinkronisasi SISTER berhasil", "success");
+        await fetchPublikasi(); 
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      showToast(error.message || "Gagal melakukan sinkronisasi", "error");
+    } finally {
+      setIsSyncing(false); 
+    }
   };
 
   const emptyForm = (): Omit<PublikasiItem, "id" | "tanggalDibuat" | "status"> => ({
@@ -400,6 +391,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     penulisMahasiswa: [],
     dokumen: []
   });
+  
     const fetchPublikasi = async () => {
       try {
         setLoading(true);
@@ -1324,7 +1316,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       <tr className="border-b border-slate-100">
                         {["Tanggal", "Judul", "Jenis", "Status", "Aksi"].map((h) => (
                           <th key={h} className="px-5 py-3 text-left text-xs text-slate-500 whitespace-nowrap" style={{ fontWeight: 600 }}>{h}</th>
-                        ))}
+                        ))} 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">

@@ -58,7 +58,7 @@ import {
 
 // Dosen-specific pages
 import { DosenKonferensiPage } from "./admin/pages/DosenKonferensiPage";
-import { DosenPublikasiPage } from "./admin/pages/DosenPublikasiPage";
+import { DosenPublikasiPage } from "./admin/pages/publikasi/DosenPublikasiPage";
 import { DosenKegiatanPage } from "./admin/pages/DosenKegiatanPage";
 
 // New Hibah pages
