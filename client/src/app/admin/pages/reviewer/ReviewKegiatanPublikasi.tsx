@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ChevronRight, ClipboardCheck } from "lucide-react";
 import { PageWrapper } from "../../components/PageWrapper";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
+import { Label } from "../../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 
 // Reusable index + list for both Kegiatan and Publikasi review
 
@@ -18,7 +23,8 @@ interface DataItem {
   judul: string;
   dosen: string;
   tanggal: string;
-  status: "submitted" | "approved" | "revisi";
+  status: string;
+  komentar?: string;
 }
 
 const MOCK_PERIODE: PeriodeItem[] = [
@@ -28,15 +34,97 @@ const MOCK_PERIODE: PeriodeItem[] = [
 
 const MOCK_DATA: DataItem[] = [
   { id: "D1", judul: "laporan kegiatan penelitian AI", dosen: "Dr. Lestari Handayani", tanggal: "2026-02-20", status: "submitted" },
-  { id: "D2", judul: "laporan monitoring IoT", dosen: "Dr. Arif Ramadhan", tanggal: "2026-02-18", status: "approved" },
-  { id: "D3", judul: "laporan desain grafis UMKM", dosen: "Dr. Fajar Nugroho", tanggal: "2026-02-15", status: "revisi" },
+  { id: "D2", judul: "laporan monitoring IoT", dosen: "Dr. Arif Ramadhan", tanggal: "2026-02-18", status: "approved", komentar: "Sudah sesuai" },
+  { id: "D3", judul: "laporan desain grafis UMKM", dosen: "Dr. Fajar Nugroho", tanggal: "2026-02-15", status: "revisi", komentar: "Laporan kurang lengkap pada bagian lampiran" },
 ];
 
 const STATUS: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Draft", cls: "bg-slate-100 text-slate-700" },
   submitted: { label: "Submitted", cls: "bg-blue-100 text-blue-700" },
-  approved: { label: "Approved", cls: "bg-green-100 text-green-700" },
+  "pending-review": { label: "Pending Review", cls: "bg-yellow-100 text-yellow-700" },
+  "submit-revisi": { label: "Submit Revisi", cls: "bg-purple-100 text-purple-700" },
   revisi: { label: "Revisi", cls: "bg-orange-100 text-orange-700" },
+  approved: { label: "Approved", cls: "bg-green-100 text-green-700" },
+  rejected: { label: "Rejected", cls: "bg-red-100 text-red-700" },
+  verified: { label: "Verified", cls: "bg-teal-100 text-teal-700" },
+  "read-finance": { label: "Read Finance", cls: "bg-sky-100 text-sky-700" },
+  lunas: { label: "Lunas", cls: "bg-emerald-100 text-emerald-700" },
+  hutang: { label: "Hutang", cls: "bg-rose-100 text-rose-700" },
+  active: { label: "Active", cls: "bg-indigo-100 text-indigo-700" },
+  inactive: { label: "Inactive", cls: "bg-gray-100 text-gray-700" },
+  expired: { label: "Expired", cls: "bg-stone-100 text-stone-700" },
 };
+
+function ReviewModal({
+  isOpen,
+  onClose,
+  item,
+  onSave
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  item: DataItem | null;
+  onSave: (id: string, status: string, komentar: string) => void;
+}) {
+  const [status, setStatus] = useState<string>("approved");
+  const [komentar, setKomentar] = useState("");
+
+  useEffect(() => {
+    if (item) {
+      setStatus(item.status === "submitted" ? "approved" : item.status);
+      setKomentar(item.komentar || "");
+    }
+  }, [item]);
+
+  if (!item) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-slate-800">Review Laporan</DialogTitle>
+          <DialogDescription className="text-slate-500 mt-1.5">
+            Tentukan status laporan dan berikan komentar atau catatan perbaikan.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-6 py-4">
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-slate-700">Status Review</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-full h-auto px-4 py-3 border-2 border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[#E30613]/20 focus:border-[#E30613] text-base font-semibold text-slate-800 transition-colors hover:border-slate-300 [&>svg]:text-black [&>svg]:opacity-100 [&>svg]:w-5 [&>svg]:h-5">
+                <SelectValue placeholder="Pilih status" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] rounded-xl border-slate-200 shadow-lg p-0">
+                {Object.keys(STATUS).map((key) => (
+                  <SelectItem key={key} value={key} className="py-3 px-4 cursor-pointer font-medium text-slate-700 focus:bg-slate-50 focus:text-slate-900 border-b border-slate-200 last:border-0 rounded-none">
+                    {STATUS[key].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="komentar" className="text-sm font-semibold text-slate-700">Komentar / Catatan</Label>
+            <Textarea
+              id="komentar"
+              placeholder="Tambahkan komentar atau catatan perbaikan di sini..."
+              value={komentar}
+              onChange={(e) => setKomentar(e.target.value)}
+              className="min-h-[140px] p-3.5 border-2 border-slate-200 rounded-xl focus-visible:ring-2 focus-visible:ring-[#E30613]/20 focus-visible:border-[#E30613] bg-white shadow-sm resize-y text-base"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-3 sm:gap-0 pt-6 mt-2 border-t border-slate-100">
+          <Button variant="outline" onClick={onClose} className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-6 py-2.5 h-auto rounded-lg">Batal</Button>
+          <Button onClick={() => onSave(item.id, status, komentar)} className="bg-[#E30613] hover:bg-[#c20511] text-white font-semibold px-6 py-2.5 h-auto rounded-lg shadow-md transition-all">Simpan Review</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── ReviewKegiatanIndex ─────────────────────────────────────────────────────
 export function ReviewKegiatanIndex() {
@@ -71,8 +159,12 @@ export function ReviewKegiatanList() {
   const { pid, jenis } = useParams<{ pid: string; jenis: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState(MOCK_DATA);
+  const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
 
-  const handleApprove = (id: string) => setData((prev) => prev.map((d) => d.id === id ? { ...d, status: "approved" as const } : d));
+  const handleSaveReview = (id: string, status: string, komentar: string) => {
+    setData((prev) => prev.map((d) => d.id === id ? { ...d, status, komentar } : d));
+    setSelectedItem(null);
+  };
 
   return (
     <PageWrapper
@@ -87,7 +179,7 @@ export function ReviewKegiatanList() {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead><tr className="border-b border-slate-100">{["No.", "Judul", "Dosen", "Tanggal", "Status", "Aksi"].map((h) => (<th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500">{h}</th>))}</tr></thead>
+            <thead><tr className="border-b border-slate-100">{["No.", "Judul", "Dosen", "Tanggal", "Status", "Komentar", "Aksi"].map((h) => (<th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500">{h}</th>))}</tr></thead>
             <tbody className="divide-y divide-slate-50">
               {data.map((item, i) => (
                 <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
@@ -98,14 +190,13 @@ export function ReviewKegiatanList() {
                   <td className="px-5 py-3.5">
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS[item.status]?.cls}`}>{STATUS[item.status]?.label}</span>
                   </td>
+                  <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[150px]" title={item.komentar}>
+                    {item.komentar || "-"}
+                  </td>
                   <td className="px-5 py-3.5">
-                    {item.status === "submitted" && (
-                      <button onClick={() => handleApprove(item.id)} className="flex items-center gap-1.5 text-xs font-medium text-green-600 hover:text-green-800">
-                        <ClipboardCheck className="w-3.5 h-3.5" /> Validasi
-                      </button>
-                    )}
-                    {item.status === "approved" && <span className="text-xs text-green-500 font-medium">✅ Tervalidasi</span>}
-                    {item.status === "revisi" && <span className="text-xs text-orange-500 font-medium">Revisi</span>}
+                    <button onClick={() => setSelectedItem(item)} className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800">
+                      <ClipboardCheck className="w-3.5 h-3.5" /> {item.status === "submitted" ? "Review" : "Ubah Review"}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -113,6 +204,13 @@ export function ReviewKegiatanList() {
           </table>
         </div>
       </div>
+
+      <ReviewModal
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        item={selectedItem}
+        onSave={handleSaveReview}
+      />
     </PageWrapper>
   );
 }
@@ -151,9 +249,59 @@ export function ReviewPublikasiList() {
   const { pid, jenis } = useParams<{ pid: string; jenis: string }>();
   const navigate = useNavigate();
   const JENIS_LABEL: Record<string, string> = { artikel: "Artikel", buku: "Buku", haki: "HAKI", prototipe: "Prototipe" };
-  const [data, setData] = useState(MOCK_DATA);
+  const [data, setData] = useState<DataItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
 
-  const handleApprove = (id: string) => setData((prev) => prev.map((d) => d.id === id ? { ...d, status: "approved" as const } : d));
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:3000/api/reviewer/publikasi');
+      const result = await res.json();
+      if (result.status === 'success') {
+        const formattedData = result.data.map((item: any) => ({
+          id: item.id,
+          judul: item.judul,
+          dosen: item.dosen || "-",
+          tanggal: item.tanggal,
+          status: item.status || "draft",
+          komentar: item.komentar || ""
+        }));
+        setData(formattedData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviewer data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSaveReview = async (id: string, status: string, komentar: string) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/reviewer/publikasi/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status, komentar })
+      });
+      
+      const result = await res.json();
+      if (result.status === 'success') {
+        setData((prev) => prev.map((d) => d.id === id ? { ...d, status, komentar } : d));
+        setSelectedItem(null);
+      } else {
+        alert("Gagal menyimpan review: " + result.message);
+      }
+    } catch (err) {
+      console.error("Error saving review:", err);
+      alert("Terjadi kesalahan saat menyimpan review.");
+    }
+  };
 
   return (
     <PageWrapper
@@ -168,24 +316,32 @@ export function ReviewPublikasiList() {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead><tr className="border-b border-slate-100">{["No.", "Judul / Publikasi", "Dosen", "Tanggal", "Status", "Aksi"].map((h) => (<th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500">{h}</th>))}</tr></thead>
+            <thead><tr className="border-b border-slate-100">{["No.", "Judul / Publikasi", "Dosen", "Tanggal", "Status", "Komentar", "Aksi"].map((h) => (<th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500">{h}</th>))}</tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {data.map((item, i) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-slate-500">Memuat data...</td>
+                </tr>
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-slate-500">Belum ada data publikasi untuk direview.</td>
+                </tr>
+              ) : data.map((item, i) => (
                 <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-5 py-3.5 text-sm text-slate-400">{i + 1}</td>
                   <td className="px-5 py-3.5 text-sm font-medium text-slate-800">{item.judul}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-600">{item.dosen}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-600 whitespace-nowrap">{item.tanggal}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS[item.status]?.cls}`}>{STATUS[item.status]?.label}</span>
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS[item.status]?.cls || 'bg-slate-100 text-slate-700'}`}>{STATUS[item.status]?.label || item.status}</span>
+                  </td>
+                  <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[150px]" title={item.komentar}>
+                    {item.komentar || "-"}
                   </td>
                   <td className="px-5 py-3.5">
-                    {item.status === "submitted" && (
-                      <button onClick={() => handleApprove(item.id)} className="flex items-center gap-1.5 text-xs font-medium text-green-600 hover:text-green-800">
-                        <ClipboardCheck className="w-3.5 h-3.5" /> Validasi
-                      </button>
-                    )}
-                    {item.status === "approved" && <span className="text-xs text-green-500 font-medium">✅ Tervalidasi</span>}
+                    <button onClick={() => setSelectedItem(item)} className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800">
+                      <ClipboardCheck className="w-3.5 h-3.5" /> {item.status === "submitted" || item.status === "draft" ? "Review" : "Ubah Review"}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -193,6 +349,14 @@ export function ReviewPublikasiList() {
           </table>
         </div>
       </div>
+
+      <ReviewModal
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        item={selectedItem}
+        onSave={handleSaveReview}
+      />
     </PageWrapper>
   );
 }
+
