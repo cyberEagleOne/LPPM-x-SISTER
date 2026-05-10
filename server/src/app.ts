@@ -3,6 +3,7 @@ import cors from 'cors';
 import sdmRoutes from './routes/sdmRoutes';
 import authRoutes from './routes/authRoutes';
 import publikasiRoutes from './routes/publikasiRoutes';
+import reviewerRoutes from './routes/reviewerRoutes';
 
 const app: Application = express();
 
@@ -18,6 +19,7 @@ app.get('/', (req, res) => {
 app.use(routeSdm, sdmRoutes);
 app.use(routeSdm, publikasiRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/reviewer', reviewerRoutes);
 
 
 export default app;
