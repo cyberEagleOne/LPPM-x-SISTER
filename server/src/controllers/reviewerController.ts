@@ -13,6 +13,8 @@ export class ReviewerController {
                     dp.tanggal, 
                     dp.status, 
                     dp.komentar,
+                    dp.jenis_publikasi,
+                    dp.nomor_paten,
                     (
                         SELECT pp.nama 
                         FROM publikasi_penulis pp 

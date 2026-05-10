@@ -27,9 +27,56 @@ interface DataItem {
   komentar?: string;
 }
 
+// Helper utilities for dynamic data mapping
+const getCategoryFromType = (item: any) => {
+  const jp = (item.jenis_publikasi || '').toLowerCase();
+  if (jp.includes('buku') || jp.includes('monograf') || jp.includes('book chapter')) return 'buku';
+  if (jp.includes('haki') || jp.includes('paten') || (item.nomor_paten && String(item.nomor_paten).trim() !== "")) return 'haki';
+  if (jp.includes('prototipe')) return 'prototipe';
+  return 'artikel'; // fallback bucket
+};
+
+const getPeriodFromDate = (dateStr: string) => {
+  if (!dateStr || dateStr.toLowerCase().includes('unknown')) return { ta: 'Tidak Diketahui', sem: 'Waktu' };
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return { ta: 'Tidak Diketahui', sem: 'Waktu' };
+  
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  let ta = "";
+  let sem = "";
+
+  if (month >= 2 && month <= 7) {
+    ta = `${year - 1}/${year}`;
+    sem = "Genap";
+  } else {
+    sem = "Ganjil";
+    if (month === 1) {
+      ta = `${year - 1}/${year}`;
+    } else {
+      ta = `${year}/${year + 1}`;
+    }
+  }
+
+  const validYears = ["2021/2022", "2022/2023", "2023/2024", "2024/2025", "2025/2026"];
+  if (!validYears.includes(ta)) return { ta: 'DLL', sem: 'Waktu' };
+
+  return { ta, sem };
+};
+
 const MOCK_PERIODE: PeriodeItem[] = [
-  { id: "P1", label: "2025/2026 Ganjil", tahunAjaran: "2025/2026", semester: "Ganjil", totalItem: 7 },
-  { id: "P2", label: "2024/2025 Genap", tahunAjaran: "2024/2025", semester: "Genap", totalItem: 5 },
+  { id: "P1", label: "2025/2026 Genap", tahunAjaran: "2025/2026", semester: "Genap", totalItem: 0 },
+  { id: "P2", label: "2025/2026 Ganjil", tahunAjaran: "2025/2026", semester: "Ganjil", totalItem: 0 },
+  { id: "P3", label: "2024/2025 Genap", tahunAjaran: "2024/2025", semester: "Genap", totalItem: 0 },
+  { id: "P4", label: "2024/2025 Ganjil", tahunAjaran: "2024/2025", semester: "Ganjil", totalItem: 0 },
+  { id: "P5", label: "2023/2024 Genap", tahunAjaran: "2023/2024", semester: "Genap", totalItem: 0 },
+  { id: "P6", label: "2023/2024 Ganjil", tahunAjaran: "2023/2024", semester: "Ganjil", totalItem: 0 },
+  { id: "P7", label: "2022/2023 Genap", tahunAjaran: "2022/2023", semester: "Genap", totalItem: 0 },
+  { id: "P8", label: "2022/2023 Ganjil", tahunAjaran: "2022/2023", semester: "Ganjil", totalItem: 0 },
+  { id: "P9", label: "2021/2022 Genap", tahunAjaran: "2021/2022", semester: "Genap", totalItem: 0 },
+  { id: "P10", label: "2021/2022 Ganjil", tahunAjaran: "2021/2022", semester: "Ganjil", totalItem: 0 },
+  { id: "DLL", label: "DLL — Waktu", tahunAjaran: "DLL", semester: "Waktu", totalItem: 0 },
+  { id: "UNKNOWN", label: "Tidak Diketahui — Waktu", tahunAjaran: "Tidak Diketahui", semester: "Waktu", totalItem: 0 },
 ];
 
 const MOCK_DATA: DataItem[] = [
@@ -131,15 +178,42 @@ export function ReviewKegiatanIndex() {
   const { jenis } = useParams<{ jenis: string }>();
   const navigate = useNavigate();
   const label = jenis === "penelitian" ? "Penelitian" : "PKM";
+  const [filterYear, setFilterYear] = useState("all");
+
+  const uniqueYears = Array.from(new Set(MOCK_PERIODE.map((p) => p.tahunAjaran))).sort().reverse();
+  const filteredPeriode = filterYear === "all"
+    ? MOCK_PERIODE
+    : MOCK_PERIODE.filter((p) => p.tahunAjaran === filterYear);
 
   return (
     <PageWrapper
       title={`Review Kegiatan ${label}`}
       subtitle="Pilih periode untuk melihat daftar laporan kegiatan"
       breadcrumbs={[{ label: "Reviewer" }, { label: `Review Kegiatan ${label}` }]}
+      actions={
+        <div className="w-[220px]">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full h-10 border border-slate-200 rounded-lg bg-white text-slate-700 font-medium shadow-sm">
+              <SelectValue placeholder="Filter Tahun Ajaran" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+              <SelectItem value="all" className="cursor-pointer font-medium text-slate-700">Semua Tahun Ajaran</SelectItem>
+              {uniqueYears.map((yr) => (
+                <SelectItem key={yr} value={yr} className="cursor-pointer font-medium text-slate-700">
+                  Tahun {yr}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      }
     >
       <div className="space-y-3">
-        {MOCK_PERIODE.map((p) => (
+        {filteredPeriode.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+            Tidak ada periode yang tersedia.
+          </div>
+        ) : filteredPeriode.map((p) => (
           <div key={p.id} onClick={() => navigate(`/reviewer/kegiatan/${p.id}/${jenis}`)}
             className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 cursor-pointer hover:border-[#E30613]/30 hover:shadow-sm transition-all group">
             <div>
@@ -221,20 +295,91 @@ export function ReviewPublikasiIndex() {
   const navigate = useNavigate();
   const JENIS_LABEL: Record<string, string> = { artikel: "Artikel", buku: "Buku", haki: "HAKI", prototipe: "Prototipe" };
   const label = JENIS_LABEL[jenis ?? ""] ?? jenis;
+  const [filterYear, setFilterYear] = useState("all");
+  const [periods, setPeriods] = useState<PeriodeItem[]>(MOCK_PERIODE);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDynamicCounts = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('http://localhost:3000/api/reviewer/publikasi');
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+          // count items
+          const frequency: Record<string, number> = {};
+          
+          result.data.forEach((item: any) => {
+            const cat = getCategoryFromType(item);
+            // must match category
+            if (cat === (jenis || 'artikel')) {
+              const { ta, sem } = getPeriodFromDate(item.tanggal);
+              const key = `${ta}|${sem}`;
+              frequency[key] = (frequency[key] || 0) + 1;
+            }
+          });
+
+          setPeriods(MOCK_PERIODE.map(p => ({
+            ...p,
+            totalItem: frequency[`${p.tahunAjaran}|${p.semester}`] || 0
+          })));
+        }
+      } catch (err) {
+        console.error("Error syncing dynamic counts:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDynamicCounts();
+  }, [jenis]);
+
+  const uniqueYears = Array.from(new Set(periods.map((p) => p.tahunAjaran))).sort().reverse();
+  const filteredPeriode = filterYear === "all"
+    ? periods
+    : periods.filter((p) => p.tahunAjaran === filterYear);
 
   return (
     <PageWrapper
       title={`Review Publikasi ${label}`}
       subtitle="Pilih periode untuk melihat daftar laporan publikasi"
       breadcrumbs={[{ label: "Reviewer" }, { label: `Review Publikasi ${label}` }]}
+      actions={
+        <div className="w-[220px]">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full h-10 border border-slate-200 rounded-lg bg-white text-slate-700 font-medium shadow-sm">
+              <SelectValue placeholder="Filter Tahun Ajaran" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+              <SelectItem value="all" className="cursor-pointer font-medium text-slate-700">Semua Tahun Ajaran</SelectItem>
+              {uniqueYears.map((yr) => (
+                <SelectItem key={yr} value={yr} className="cursor-pointer font-medium text-slate-700">
+                  {yr === 'DLL' || yr === 'Tidak Diketahui' ? yr : `Tahun ${yr}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      }
     >
       <div className="space-y-3">
-        {MOCK_PERIODE.map((p) => (
+        {loading ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+            Memuat statistik periode...
+          </div>
+        ) : filteredPeriode.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+            Tidak ada periode yang tersedia.
+          </div>
+        ) : filteredPeriode.map((p) => (
           <div key={p.id} onClick={() => navigate(`/reviewer/publikasi/${p.id}/${jenis}`)}
             className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 cursor-pointer hover:border-[#E30613]/30 hover:shadow-sm transition-all group">
             <div>
-              <p className="text-sm font-semibold text-slate-800">{p.tahunAjaran} — {p.semester}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{p.totalItem} laporan publikasi</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {p.tahunAjaran} {p.semester !== 'Waktu' ? `— ${p.semester}` : ''}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">{p.totalItem} laporan publikasi terdaftar</p>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#E30613] transition-colors" />
           </div>
@@ -258,8 +403,22 @@ export function ReviewPublikasiList() {
       setLoading(true);
       const res = await fetch('http://localhost:3000/api/reviewer/publikasi');
       const result = await res.json();
+      
       if (result.status === 'success') {
-        const formattedData = result.data.map((item: any) => ({
+        const currentPeriod = MOCK_PERIODE.find(p => p.id === pid);
+
+        // Apply server data filter exactly correlating to client definitions
+        const filtered = result.data.filter((item: any) => {
+          // filter by publication type
+          const itemCat = getCategoryFromType(item);
+          if (itemCat !== (jenis || 'artikel')) return false;
+
+          // filter by mapped academic period definition
+          const { ta, sem } = getPeriodFromDate(item.tanggal);
+          return currentPeriod && currentPeriod.tahunAjaran === ta && currentPeriod.semester === sem;
+        });
+
+        const formattedData = filtered.map((item: any) => ({
           id: item.id,
           judul: item.judul,
           dosen: item.dosen || "-",
