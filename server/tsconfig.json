@@ -10,13 +10,14 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
-    "rootDir": "./src",
+    "rootDir": "../",
     "outDir": "./dist",
     "resolveJsonModule": true,
     "ignoreDeprecations": "6.0"
   },
   "include": [
-    "src/**/*"
+    "./src/**/*",
+    "../shared/**/*"
 , "src/config/apiConfig.ts", "src/config/models.ts"  ],
   "exclude": [
     "node_modules",

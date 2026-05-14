@@ -4,8 +4,12 @@ import sdmRoutes from './routes/sdmRoutes';
 import authRoutes from './routes/authRoutes';
 import publikasiRoutes from './routes/publikasiRoutes';
 import reviewerRoutes from './routes/reviewerRoutes';
+import "reflect-metadata";
+import { connectDB } from './config/database';
 
 const app: Application = express();
+
+connectDB();
 
 const routeSdm = '/api/sdm';
 

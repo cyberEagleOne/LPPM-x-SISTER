@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model anggota {
+  id                        BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  litabmas_id               String            @db.Char(36)
+  nama                      String            @db.VarChar(255)
+  jenis                     anggota_jenis
+  id_sdm                    String?           @db.Char(36)
+  id_peserta_didik          String?           @db.Char(36)
+  nomor_induk_peserta_didik String?           @db.VarChar(50)
+  id_orang                  String?           @db.Char(36)
+  aktif                     Boolean           @default(true)
+  peran                     String            @db.VarChar(50)
+  detail_penelitian         detail_penelitian @relation(fields: [litabmas_id], references: [id], onDelete: Cascade, map: "fk_penelitian2")
+
+  @@index([litabmas_id], map: "idx_anggota_litabmas")
+  @@index([id_orang], map: "idx_anggota_orang")
+  @@index([id_peserta_didik], map: "idx_anggota_peserta")
+  @@index([id_sdm], map: "idx_anggota_sdm")
+}
+
+model bidang_keilmuan_pn {
+  id                 Int        @id @default(autoincrement())
+  urutan             Int
+  id_kelompok_bidang String     @db.VarChar(255)
+  kelompok_bidang    String     @db.Text
+  id_penelitian      String     @db.Char(56)
+  penelitian         penelitian @relation(fields: [id_penelitian], references: [id], onDelete: Cascade, map: "fk_penelitian6")
+
+  @@index([id_penelitian], map: "fk_penelitian6")
+}
+
+model bidang_keilmuan_sdm {
+  id                 BigInt  @id @default(autoincrement())
+  urutan             Int
+  id_kelompok_bidang String  @db.Char(100)
+  kelompok_bidang    String? @db.Text
+  id_sdm             String  @db.Char(255)
+  users              users   @relation(fields: [id_sdm], references: [id], onDelete: Cascade, map: "fk_id_sdm")
+
+  @@index([id_sdm], map: "fk_id_sdm")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model detail_penelitian {
+  id                     String     @id @db.Char(36)
+  id_kategori_kegiatan   Int?
+  judul                  String     @db.VarChar(500)
+  id_afiliasi            String?    @db.Char(36)
+  afiliasi               String?    @db.VarChar(255)
+  id_kelompok_bidang     String?    @db.Char(36)
+  kelompok_bidang        String?    @db.VarChar(255)
+  id_litabmas_sebelumnya String?    @db.Char(36)
+  litabmas_sebelumnya    String?    @db.VarChar(500)
+  id_jenis_skim          String?    @db.Char(36)
+  jenis_skim             String?    @db.VarChar(255)
+  lokasi                 String?    @db.VarChar(500)
+  tahun_usulan           Int?
+  tahun_kegiatan         Int?
+  tahun_pelaksanaan      Int?
+  lama_kegiatan          Int?
+  tahun_pelaksanaan_ke   Int?
+  dana_dikti             Decimal?   @default(0.00) @db.Decimal(15, 2)
+  dana_perguruan_tinggi  Decimal?   @default(0.00) @db.Decimal(15, 2)
+  dana_institusi_lain    Decimal?   @default(0.00) @db.Decimal(15, 2)
+  in_kind                String?    @db.Text
+  sk_penugasan           String?    @db.VarChar(255)
+  tanggal_sk_penugasan   String?    @db.VarChar(100)
+  anggota                anggota[]
+  penelitian             penelitian @relation(fields: [id], references: [id], onDelete: Cascade, map: "fk_penelitian5")
+  dokumen                dokumen[]
+  mitra                  mitra[]
+}
+
+model detail_publikasi {
+  id                         String              @id @db.Char(36)
+  kategori_kegiatan          String              @db.VarChar(255)
+  judul                      String?             @db.Text
+  quartile                   Int?
+  jenis_publikasi            String              @db.VarChar(255)
+  tanggal                    String              @db.VarChar(255)
+  id_kategori_kegiatan       Int
+  id_jenis_publikasi         Int
+  kategori_capaian_luaran    String              @db.VarChar(255)
+  id_kategori_capaian_luaran Int?
+  judul_litabmas             String?             @db.Text
+  id_litabmas                String?             @db.Char(36)
+  nomor_paten                String?             @db.VarChar(255)
+  pemberi_paten              String?             @db.VarChar(255)
+  penerbit                   String?             @db.VarChar(255)
+  isbn                       String?             @db.VarChar(100)
+  jumlah_halaman             Int?
+  tautan                     String?             @db.Text
+  keterangan                 String?             @db.Text
+  judul_artikel              String?             @db.Text
+  judul_asli                 String?             @db.Text
+  nama_jurnal                String?             @db.VarChar(255)
+  halaman                    String?             @db.VarChar(50)
+  edisi                      String?             @db.VarChar(50)
+  volume                     Int?
+  nomor                      Int?
+  doi                        String?             @db.VarChar(100)
+  issn                       String?             @db.VarChar(50)
+  e_issn                     String?             @db.VarChar(50)
+  seminar                    Boolean?            @default(false)
+  prosiding                  Boolean?            @default(false)
+  asal_data                  String?             @db.VarChar(100)
+  status                     String              @db.VarChar(50)
+  komentar                   String              @db.Text
+  publikasi                  publikasi           @relation(fields: [id], references: [id], onUpdate: Restrict, map: "fk_dt_penelitian_pb")
+  publikasi_dokumen          publikasi_dokumen[]
+  publikasi_penulis          publikasi_penulis[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model dokumen {
+  id                String            @id @db.Char(36)
+  litabmas_id       String            @db.Char(36)
+  nama              String            @db.VarChar(255)
+  jenis_dokumen     String?           @db.VarChar(100)
+  nama_file         String?           @db.VarChar(255)
+  jenis_file        String?           @db.VarChar(100)
+  tanggal_upload    DateTime?         @db.DateTime(0)
+  tautan            String?           @db.Text
+  keterangan        String?           @db.Text
+  created_at        DateTime          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime          @default(now()) @db.Timestamp(0)
+  detail_penelitian detail_penelitian @relation(fields: [litabmas_id], references: [id], onDelete: Cascade, map: "fk_penelitian4")
+
+  @@index([litabmas_id], map: "idx_dokumen_litabmas")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mitra {
+  id                String            @id @db.Char(36)
+  litabmas_id       String            @db.Char(36)
+  nama              String            @db.VarChar(255)
+  created_at        DateTime          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime          @default(now()) @db.Timestamp(0)
+  detail_penelitian detail_penelitian @relation(fields: [litabmas_id], references: [id], onDelete: Cascade, map: "fk_penelitian3")
+
+  @@index([litabmas_id], map: "idx_mitra_litabmas")
+}
+
+model penelitian {
+  id                 String               @id @db.Char(56)
+  judul              String?              @db.Text
+  tahun_pelaksanaan  Int?
+  lama_kegiatan      Int?
+  id_users           String               @db.VarChar(255)
+  bidang_keilmuan_pn bidang_keilmuan_pn[]
+  detail_penelitian  detail_penelitian?
+  users              users                @relation(fields: [id_users], references: [id], onDelete: Cascade, map: "fk_users")
+
+  @@index([id_users], map: "fk_users")
+}
+
+model publikasi {
+  id                String            @id @db.VarChar(255)
+  kategori_kegiatan String?           @db.VarChar(255)
+  judul             String?           @db.Text
+  quartile          Int?
+  jenis_publikasi   String?           @db.VarChar(255)
+  tanggal           String?           @db.VarChar(100)
+  asal_data         String?           @db.VarChar(255)
+  id_user           String            @db.Char(255)
+  detail_publikasi  detail_publikasi?
+  users             users             @relation(fields: [id_user], references: [id], onDelete: Cascade, map: "fk_id_sdm2")
+
+  @@index([id_user], map: "fk_id_sdm2")
+}
+
+model publikasi_dokumen {
+  id               String           @id @db.Char(36)
+  id_publikasi     String           @db.Char(36)
+  nama             String           @db.VarChar(255)
+  jenis_dokumen    String           @db.VarChar(255)
+  nama_file        String           @db.VarChar(255)
+  jenis_file       String           @db.VarChar(100)
+  tanggal_upload   String?          @db.VarChar(100)
+  tautan           String?          @db.Text
+  keterangan       String?          @db.Text
+  detail_publikasi detail_publikasi @relation(fields: [id_publikasi], references: [id], onDelete: Cascade, map: "publikasi_dokumen_ibfk_1")
+
+  @@unique([id_publikasi, nama_file], map: "unique_dokumen")
+  @@index([id_publikasi], map: "publikasi_dokumen_ibfk_1")
+}
+
+model publikasi_penulis {
+  id_penulis                Int                     @id @default(autoincrement())
+  id_publikasi              String                  @db.Char(36)
+  nama                      String                  @db.VarChar(255)
+  jenis                     publikasi_penulis_jenis
+  id_sdm                    String?                 @db.Char(36)
+  id_peserta_didik          String?                 @db.Char(36)
+  nomor_induk_peserta_didik String?                 @db.VarChar(100)
+  id_orang                  String?                 @db.Char(36)
+  urutan                    Int
+  afiliasi                  String                  @db.Text
+  corresponding_author      Boolean?                @default(false)
+  peran                     String                  @db.VarChar(100)
+  detail_publikasi          detail_publikasi        @relation(fields: [id_publikasi], references: [id], onDelete: Cascade, map: "fk_dt_publikasi")
+
+  @@unique([id_publikasi, nama], map: "unique_penulis")
+  @@index([id_publikasi], map: "fk_dt_publikasi")
+}
+
+model token {
+  id        Int      @id @default(autoincrement())
+  token     String?  @db.Text
+  timestamp DateTime @default(now()) @db.Timestamp(0)
+}
+
+model users {
+  id                  String                @id @db.Char(255)
+  nama                String                @db.VarChar(255)
+  nidn                String                @db.Char(255)
+  email               String                @db.VarChar(255)
+  email_verified_at   DateTime?             @db.Timestamp(0)
+  provider_id         String?               @db.VarChar(255)
+  avatar              String?               @db.Text
+  password            String                @db.VarChar(255)
+  remember_token      String?               @db.VarChar(100)
+  created_at          DateTime?             @db.Timestamp(0)
+  updated_at          DateTime?             @db.Timestamp(0)
+  fakultas_id         BigInt?               @db.UnsignedBigInt
+  prodi_id            BigInt?               @db.UnsignedBigInt
+  bidang_keilmuan_sdm bidang_keilmuan_sdm[]
+  penelitian          penelitian[]
+  publikasi           publikasi[]
+}
+
+enum anggota_jenis {
+  Dosen
+  Mahasiswa
+  Profesional_Mitra @map("Profesional/Mitra")
+}
+
+enum publikasi_penulis_jenis {
+  Dosen
+  Mahasiswa
+  Profesional_Mitra @map("Profesional/Mitra")
+}

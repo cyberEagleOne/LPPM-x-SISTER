@@ -6,7 +6,7 @@ export interface Token extends RowDataPacket{
   timestamp: any;
 }
 
-export interface SdmResponse {
+export interface Sdm {
   id_sdm?: string;
   nama_sdm?: string;
   nidn?: string;

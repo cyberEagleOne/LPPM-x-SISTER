@@ -1,16 +1,15 @@
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
+// server/src/config/database.ts
+import { PrismaClient } from '@prisma/client';
 
-dotenv.config();
+// Inisialisasi satu instance PrismaClient agar bisa dipakai di seluruh aplikasi
+export const prisma = new PrismaClient();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-
-export default pool;
+export const connectDB = async () => {
+  try {
+    await prisma.$connect();
+    console.log("Berhasil terhubung ke Database melalui Prisma!");
+  } catch (error) {
+    console.error("Gagal terhubung ke Database:", error);
+    process.exit(1);
+  }
+};
