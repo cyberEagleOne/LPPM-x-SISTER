@@ -23,12 +23,12 @@ export class PublikasiController {
                     id_user: dosen_id
                 },
                 include: {
-                    // LEFT JOIN ke detail_publikasi
-                    detail_publikasi: true, 
-                    // Ambil data penulis terkait (Otomatis jadi Array)
-                    publikasi_penulis: true,
-                    // Ambil data dokumen terkait (Otomatis jadi Array)
-                    publikasi_dokumen: true 
+                    detail_publikasi: {
+                        include: {
+                            publikasi_penulis: true,
+                            publikasi_dokumen: true
+                        }
+                    }
                 }
             });
 
