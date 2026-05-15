@@ -56,7 +56,7 @@ model bidang_keilmuan_sdm {
 model detail_penelitian {
   id                     String     @id @db.Char(36)
   id_kategori_kegiatan   Int?
-  judul                  String     @db.VarChar(500)
+  judul                  String     @db.Text
   id_afiliasi            String?    @db.Char(36)
   afiliasi               String?    @db.VarChar(255)
   id_kelompok_bidang     String?    @db.Char(36)
@@ -171,7 +171,7 @@ model penelitian {
 model publikasi {
   id                String            @id @db.VarChar(255)
   kategori_kegiatan String?           @db.VarChar(255)
-  judul             String?           @db.VarChar(255)
+  judul             String?           @db.Text
   quartile          Int?
   jenis_publikasi   String?           @db.VarChar(255)
   tanggal           String?           @db.VarChar(100)

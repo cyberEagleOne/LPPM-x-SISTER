@@ -144,7 +144,7 @@ export class syncToDB {
                         for (const bidang of listBidangIlmuPenelitian) {
                             await prisma.bidang_keilmuan_pn.create({
                                 data: {
-                                    urutan: bidang.urutan || 1,
+                                    urutan: bidang.urutan ? Number(bidang.urutan) : 1,
                                     id_kelompok_bidang: bidang.id_kelompok_bidang,
                                     kelompok_bidang: bidang.kelompok_bidang || "Unknown",
                                     id_penelitian: idPenelitian
@@ -332,14 +332,14 @@ export class syncToDB {
                         update: {
                             kategori_kegiatan: pub.kategori_kegiatan || "Unknown",
                             judul: pub.judul || "Tanpa Judul",
-                            quartile: pub.quartile || null,
+                            quartile: pub.quartile ? Number(pub.quartile) : null,
                             tanggal: pub.tanggal || "Unknown",
                         },
                         create: {
                             id: idPublikasi,
                             kategori_kegiatan: pub.kategori_kegiatan || "Unknown",
                             judul: pub.judul || "Tanpa Judul",
-                            quartile: pub.quartile || null,
+                            quartile: pub.quartile ? Number(pub.quartile) : null,
                             jenis_publikasi: pub.jenis_publikasi || "Unknown",
                             tanggal: pub.tanggal || "Unknown",
                             asal_data: pub.asal_data || null,
@@ -357,7 +357,7 @@ export class syncToDB {
                             update: {
                                 kategori_kegiatan: detail.kategori_kegiatan || pub.kategori_kegiatan || "Unknown",
                                 judul: detail.judul || pub.judul || "Tanpa Judul",
-                                quartile: detail.quartile || pub.quartile || null,
+                                quartile: detail.quartile ? Number(detail.quartile) : null,
                                 jenis_publikasi: detail.jenis_publikasi || pub.jenis_publikasi || "Unknown",
                                 tanggal: detail.tanggal || pub.tanggal || "Unknown",
                                 id_kategori_kegiatan: detail.id_kategori_kegiatan || 0,
@@ -393,7 +393,7 @@ export class syncToDB {
                                 id: idPublikasi,
                                 kategori_kegiatan: detail.kategori_kegiatan || pub.kategori_kegiatan || "Unknown",
                                 judul: detail.judul || pub.judul || "Tanpa Judul",
-                                quartile: detail.quartile || pub.quartile || null,
+                                quartile: detail.quartile ? Number(detail.quartile) : null,
                                 jenis_publikasi: detail.jenis_publikasi || pub.jenis_publikasi || "Unknown",
                                 tanggal: detail.tanggal || pub.tanggal || "Unknown",
                                 id_kategori_kegiatan: detail.id_kategori_kegiatan || 0,
@@ -523,7 +523,8 @@ export class syncToDB {
 }
 
 if (require.main === module) {
-    (async () => {
+    syncToDB.syncPublikasiAllSDM();
+    /*(async () => {
         try {
             console.log("Memulai sinkronisasi SDM...");
 
@@ -543,4 +544,5 @@ if (require.main === module) {
             process.exit(1); 
         }
     })();
+    */
 }

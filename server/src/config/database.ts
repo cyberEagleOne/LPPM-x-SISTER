@@ -1,5 +1,5 @@
 // server/src/config/database.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma-client';
 
 // Inisialisasi satu instance PrismaClient agar bisa dipakai di seluruh aplikasi
 export const prisma = new PrismaClient();
