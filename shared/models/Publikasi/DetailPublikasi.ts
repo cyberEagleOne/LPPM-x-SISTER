@@ -11,6 +11,7 @@ export interface PublikasiDokumen {
 }
 
 export interface PublikasiPenulis {
+  id: string;
   id_penulis: number;          
   id_publikasi: string;        
   nama: string;               

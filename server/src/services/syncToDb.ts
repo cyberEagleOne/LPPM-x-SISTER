@@ -46,6 +46,10 @@ export class syncToDB {
 
                 if (listBidangIlmuSDM && listBidangIlmuSDM.length > 0) {
                     for (const bidang of listBidangIlmuSDM) {
+                        if (bidang.id === undefined || bidang.id === null) {
+                            console.log(`[Skip] SDM ditemukan tanpa ID, melewati data ini...`);
+                            continue; 
+                        }
                         // UPSERT Bidang Keilmuan
                         // Catatan: Karena 'id' di database adalah bigint, gunakan BigInt() di Prisma
                         await prisma.bidang_keilmuan_sdm.upsert({
@@ -110,7 +114,7 @@ export class syncToDB {
 
                 for (const pen of listPenelitian) {
                     const idPenelitian = pen.id;
-                    if (!idPenelitian) continue;
+                    if (!idPenelitian || idPenelitian === undefined || idPenelitian === null) continue;
 
                     // 1. UPSERT PENELITIAN
                     await prisma.penelitian.upsert({
@@ -128,24 +132,20 @@ export class syncToDB {
                             id_users: sdm.id_sdm
                         }
                     });
+                    
 
                     // 2. UPSERT BIDANG KEILMUAN PENELITIAN
                     const listBidangIlmuPenelitian = await apiReader.fetchBidangIlmuPenelitian(idPenelitian);
                     if (listBidangIlmuPenelitian && listBidangIlmuPenelitian.length > 0) {
+                        // Hapus data lama berdasarkan id_penelitian sebelum insert yang baru
+                        await prisma.bidang_keilmuan_pn.deleteMany({
+                            where: { id_penelitian: idPenelitian }
+                        });
                         for (const bidang of listBidangIlmuPenelitian) {
-                            await prisma.bidang_keilmuan_pn.upsert({
-                                // Asumsi kolom ID adalah tipe angka (sesuaikan jika di schema.prisma tipenya String)
-                                where: { id: Number(bidang.id) }, 
-                                update: {
-                                    urutan: bidang.urutan || null,
-                                    id_kelompok_bidang: bidang.id_kelompok_bidang || null,
-                                    kelompok_bidang: bidang.kelompok_bidang || "Unknown",
-                                    id_penelitian: idPenelitian
-                                },
-                                create: {
-                                    id: Number(bidang.id),
-                                    urutan: bidang.urutan || null,
-                                    id_kelompok_bidang: bidang.id_kelompok_bidang || null,
+                            await prisma.bidang_keilmuan_pn.create({
+                                data: {
+                                    urutan: bidang.urutan || 1,
+                                    id_kelompok_bidang: bidang.id_kelompok_bidang,
                                     kelompok_bidang: bidang.kelompok_bidang || "Unknown",
                                     id_penelitian: idPenelitian
                                 }
@@ -162,7 +162,7 @@ export class syncToDB {
                             where: { id: idPenelitian },
                             update: {
                                 id_kategori_kegiatan: detail.id_kategori_kegiatan || null,
-                                judul: detail.judul || pen.judul,
+                                judul: detail.judul,
                                 id_afiliasi: detail.id_afiliasi || null,
                                 afiliasi: detail.afiliasi || null,
                                 id_kelompok_bidang: detail.id_kelompok_bidang || null,
@@ -185,7 +185,7 @@ export class syncToDB {
                             create: {
                                 id: idPenelitian,
                                 id_kategori_kegiatan: detail.id_kategori_kegiatan || null,
-                                judul: detail.judul || pen.judul,
+                                judul: detail.judul,
                                 id_afiliasi: detail.id_afiliasi || null,
                                 afiliasi: detail.afiliasi || null,
                                 id_kelompok_bidang: detail.id_kelompok_bidang || null,
@@ -214,18 +214,32 @@ export class syncToDB {
                             });
 
                             for (const anggota of detail.anggota) {
+                                
+                                // ----------------------------------------------------
+                                // LAKUKAN MAPPING (PENERJEMAHAN) ENUM DI SINI
+                                // ----------------------------------------------------
+                                let jenisAnggota: any = anggota.jenis || "Dosen";
+                                
+                                // Jika data dari SISTER mengandung garis miring, ubah ke underscore
+                                if (jenisAnggota === "Profesional/Mitra") {
+                                    jenisAnggota = "Profesional_Mitra";
+                                }
+                                // ----------------------------------------------------
+
                                 await prisma.anggota.create({
                                     data: {
-                                        // Gunakan undefined (bukan null) jika ID di database adalah auto_increment
                                         id: anggota.id || undefined, 
                                         litabmas_id: idPenelitian,
                                         nama: anggota.nama || "Unknown",
-                                        jenis: anggota.jenis || "Dosen",
+                                        
+                                        // Gunakan variabel yang sudah di-mapping
+                                        jenis: jenisAnggota, 
+                                        
                                         id_sdm: anggota.id_sdm || null,
                                         id_peserta_didik: anggota.id_peserta_didik || null,
                                         nomor_induk_peserta_didik: anggota.nomor_induk_peserta_didik || null,
                                         id_orang: anggota.id_orang || null,
-                                        aktif: 1,
+                                        aktif: true,
                                         peran: anggota.peran || "Anggota"
                                     }
                                 });
@@ -259,7 +273,7 @@ export class syncToDB {
                             for (const dok of detail.dokumen) {
                                 await prisma.dokumen.create({
                                     data: {
-                                        id: dok.id || undefined, 
+                                        id: dok.id, 
                                         litabmas_id: idPenelitian,
                                         nama: dok.nama || "Unknown",
                                         jenis_dokumen: dok.jenis_dokumen || null,
@@ -369,8 +383,8 @@ export class syncToDB {
                                 doi: detail.doi || null,
                                 issn: detail.issn || null,
                                 e_issn: detail.e_issn || null,
-                                seminar: detail.seminar ? 1 : 0,
-                                prosiding: detail.prosiding ? 1 : 0,
+                                seminar: detail.seminar ? true : false,
+                                prosiding: detail.prosiding ? true : false,
                                 asal_data: detail.asal_data || pub.asal_data || null,
                                 status: "approved",
                                 komentar: "-" 
@@ -405,8 +419,8 @@ export class syncToDB {
                                 doi: detail.doi || null,
                                 issn: detail.issn || null,
                                 e_issn: detail.e_issn || null,
-                                seminar: detail.seminar ? 1 : 0,
-                                prosiding: detail.prosiding ? 1 : 0,
+                                seminar: detail.seminar ? true : false,
+                                prosiding: detail.prosiding ? true : false,
                                 asal_data: detail.asal_data || pub.asal_data || null,
                                 status: "approved",
                                 komentar: "-" // Menyesuaikan kolom NOT NULL jika ada di DB
@@ -431,7 +445,7 @@ export class syncToDB {
                                         id_orang: penulis.id_orang || null,
                                         urutan: penulis.urutan || 0,
                                         afiliasi: penulis.afiliasi || "",
-                                        corresponding_author: penulis.corresponding_author ? 1 : 0,
+                                        corresponding_author: penulis.corresponding_author ? true : false,
                                         peran: penulis.peran || "Penulis"
                                     }
                                 });
@@ -447,7 +461,7 @@ export class syncToDB {
                             for (const dok of detail.dokumen) {
                                 await prisma.publikasi_dokumen.create({
                                     data: {
-                                        id: dok.id || undefined, // Biarkan auto-increment jika ID kosong
+                                        id: dok.id, // Biarkan auto-increment jika ID kosong
                                         id_publikasi: idPublikasi,
                                         nama: dok.nama || "Unknown",
                                         jenis_dokumen: dok.jenis_dokumen || "Unknown",

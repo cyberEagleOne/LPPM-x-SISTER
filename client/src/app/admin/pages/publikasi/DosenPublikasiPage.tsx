@@ -13,6 +13,7 @@ import { StepperStatus } from "../../components/StepperStatus";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { SyncSisterModal } from "../../components/SyncSisterModal";
 import { useAuth } from "../../context/AuthContext";
+import { PublikasiPenulis, PublikasiDokumen} from "../../../../../../shared/models"
 
 /* ────────────────── Types ────────────────── */
 
@@ -44,24 +45,6 @@ export interface RiwayatAktivitas {
   aktor: string;
   peran: string; // Contoh: "Dosen", "Reviewer", "Admin LPPM"
   catatan?: string | null;
-}
-
-export interface PenulisTambahan {
-  id: string;
-  nama: string;
-  afiliasi: string;
-  urutan: number | "";
-}
-
-export interface DokumenPublikasi {
-  id: string;
-  nama: string;
-  jenis_dokumen: string;
-  nama_file: string;
-  jenis_file: string;
-  tanggal_upload: Date;
-  tautan: string;
-  keterangan: string;
 }
 
 export interface PublikasiItem {
@@ -100,10 +83,10 @@ export interface PublikasiItem {
   status: StatusType;
   tanggalDibuat: string;
   urutanPenulis: number | "";
-  penulisDosen: PenulisTambahan[];
-  penulisMahasiswa: PenulisTambahan[];
+  penulisDosen: PublikasiPenulis[];
+  penulisMahasiswa: PublikasiPenulis[];
   riwayat?: RiwayatAktivitas[];
-  dokumen: DokumenPublikasi[];
+  dokumen: PublikasiDokumen[];
 }
 
 type ViewMode = "periode" | "list" | "form" | "detail";
@@ -410,27 +393,46 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
           const dataDenganPeriode = result.data.map((item: any) => {
             const rawTanggal = item.tanggalDibuat || item.tanggal || "";
             const isUnknown = !rawTanggal || rawTanggal.toLowerCase() === "unknown";
+            const idPublikasi = item.id;
 
-            const penulisDosen: PenulisTambahan[] = [];
-            const penulisMahasiswa: PenulisTambahan[] = [];
-            const dokumen: DokumenPublikasi[] = [];
+            const penulisDosen: PublikasiPenulis[] = [];
+            const penulisMahasiswa: PublikasiPenulis[] = [];
+            const dokumen: PublikasiDokumen[] = [];
 
             if (item.tim_penulis && Array.isArray(item.tim_penulis)) {
                 item.tim_penulis.forEach((p: any) => {
                     if (p.jenis === "Dosen") {
-                        penulisDosen.push({ 
-                            id: p.id_penulis || Math.random().toString(), 
-                            nama: p.nama || "Unknown", 
-                            afiliasi: p.afiliasi || "-", 
-                            urutan: p.urutan || "" 
+                        penulisDosen.push({
+                          id_penulis: p.id_penulis || Math.random().toString(),
+                          nama: p.nama || "Unknown",
+                          afiliasi: p.afiliasi || "-",
+                          urutan: p.urutan || "-",
+                          id_publikasi: idPublikasi,
+                          jenis: "Dosen",
+                          id_sdm: p.id_sdm || "-",
+                          id_peserta_didik: p.id_peserta_didik || "-",
+                          nomor_induk_peserta_didik: p.nomor_induk_peserta_didik || "-",
+                          id_orang: p.id_orang || "-",
+                          corresponding_author: p.corresponding_author || "-",
+                          peran: p.peran,
+                          id: p.id
                         });
                     } 
                     else if (p.jenis === "Mahasiswa") {
-                        penulisMahasiswa.push({ 
-                            id: p.id_penulis || Math.random().toString(), 
-                            nama: p.nama || "Unknown", 
-                            afiliasi: p.afiliasi || "-", 
-                            urutan: p.urutan || "" 
+                        penulisMahasiswa.push({
+                          id_penulis: p.id_penulis || Math.random().toString(),
+                          nama: p.nama || "Unknown",
+                          afiliasi: p.afiliasi || "-",
+                          urutan: p.urutan || "-",
+                          id_publikasi: idPublikasi,
+                          jenis: "Dosen",
+                          id_sdm: p.id_sdm || "-",
+                          id_peserta_didik: p.id_peserta_didik || "-",
+                          nomor_induk_peserta_didik: p.nomor_induk_peserta_didik || "-",
+                          id_orang: p.id_orang || "-",
+                          corresponding_author: p.corresponding_author || "-",
+                          peran: p.peran,
+                          id: p.id
                         });
                     }
                 });
@@ -440,6 +442,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               item.dokumen.forEach((d: any) => {
                 dokumen.push({
                   id: d.id || Math.random().toString(),
+                  id_publikasi: idPublikasi,
                   nama: d.nama || "Unknown",
                   jenis_dokumen: d.jenis_dokumen || "-",
                   nama_file: d.nama_file || "Unknown",
@@ -535,7 +538,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
     }));
   };
 
-  const handleUpdatePenulis = (tipe: "dosen" | "mahasiswa", id: string, key: keyof PenulisTambahan, value: string | number) => {
+  const handleUpdatePenulis = (tipe: "dosen" | "mahasiswa", id: string, key: keyof PublikasiPenulis, value: string | number) => {
     const field = tipe === "dosen" ? "penulisDosen" : "penulisMahasiswa";
     setFormData((prev) => ({
       ...prev,

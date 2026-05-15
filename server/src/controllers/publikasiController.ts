@@ -205,9 +205,18 @@ export class PublikasiController {
     // --- Fungsi Delete Data (DELETE) ---
     static async deletePublikasi(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            // 1. Ambil ID dan paksa tipe datanya menjadi string
+            const id = req.params.id as string;
 
-            // 1. Cek keberadaan data dan statusnya
+            // Validasi tambahan (Opsional tapi sangat disarankan)
+            if (!id || typeof id !== 'string') {
+                return res.status(400).json({ 
+                    status: 'error', 
+                    message: 'ID tidak valid' 
+                });
+            }
+
+            // 2. Cek keberadaan data dan statusnya
             const dataPublikasi = await prisma.publikasi.findUnique({
                 where: { id: id },
                 include: {
@@ -224,7 +233,7 @@ export class PublikasiController {
                 });
             }
 
-            // 2. Validasi status Approved
+            // 3. Validasi status Approved
             if (dataPublikasi.detail_publikasi?.status?.toLowerCase() === 'approved') {
                 return res.status(403).json({ 
                     status: 'error', 
@@ -232,21 +241,26 @@ export class PublikasiController {
                 });
             }
 
-            // 3. Eksekusi penghapusan dalam Transaksi
-            await prisma.$transaction(async (tx: any) => {
+            // 4. Eksekusi penghapusan dalam Transaksi
+            // Hapus ": any" pada tx agar TypeScript bisa mengawal autocompletenya
+            await prisma.$transaction(async (tx) => {
 
-                await tx.publikasi_dokumen.delete({
+                // Gunakan deleteMany untuk tabel relasi yang dihapus berdasarkan Foreign Key
+                await tx.publikasi_dokumen.deleteMany({
+                    where: { id_publikasi: id } // Asumsi nama foreign key-nya id_publikasi
+                });
+
+                await tx.publikasi_penulis.deleteMany({
+                    where: { id_publikasi: id }
+                });
+
+                // Jika detail_publikasi ini 1-to-1 dan id_publikasi adalah @unique, bisa pakai .delete().
+                // Tapi jika bukan @unique di schema.prisma, wajib pakai .deleteMany()
+                await tx.detail_publikasi.deleteMany({
                     where: { id: id }
                 });
 
-                await tx.publikasi_penulis.delete({
-                    where: { id_publikasi: id }
-                });
-
-                await tx.detail_publikasi.delete({
-                    where: { id_publikasi: id }
-                });
-
+                // Tabel utama menggunakan .delete() karena 'id' adalah Primary Key
                 await tx.publikasi.delete({
                     where: { id: id }
                 });
@@ -269,54 +283,54 @@ export class PublikasiController {
 
     // --- Fungsi Menarik Data dari API SISTER ---
     static async getSisterPublikasi(req: Request, res: Response) {
-        try {
-            const dosen_id = req.query.dosen_id;
+    try {
+        // Gunakan 'as string' agar tidak dianggap string[] oleh TypeScript
+        const dosen_id = req.query.dosen_id as string;
 
-            if (!dosen_id || typeof dosen_id !== 'string') {
-                return res.status(400).json({ 
-                    status: 'error', 
-                    message: 'Dosen ID diperlukan' 
-                });
-            }
-
-            // 1. Tarik data "Live" dari API SISTER melalui Service
-            const rawSisterData = await syncToDB.syncPublikasiEachSDM(dosen_id);
-
-            // 2. Ambil semua ID publikasi milik dosen tersebut yang sudah ada di DB lokal
-            const localPublikasi = await prisma.publikasi.findMany({
-                where: {
-                    id_user: dosen_id,
-                    NOT: { id: null } // Memastikan ID tidak null
-                },
-                select: {
-                    id: true // Kita hanya butuh ID untuk pengecekan
-                }
-            });
-
-            // Sederhanakan hasil query menjadi array ID saja: ['id1', 'id2', ...]
-            const existingSisterIds = localPublikasi.map((row: {id: string}) => row.id);
-
-            // 3. Gabungkan data SISTER dengan flag status keberadaan di lokal
-            const formattedData = rawSisterData.map((item) => {
-                return {
-                    ...item,
-                    // Tambahkan flag boolean agar frontend bisa tahu mana data yang sudah di-sync
-                    existsLocally: existingSisterIds.includes(item.id) 
-                };
-            });
-
-            return res.status(200).json({
-                status: 'success',
-                message: 'Berhasil menarik data SISTER',
-                data: formattedData
-            });
-
-        } catch (error: any) {
-            console.error("Error getSisterPublikasi:", error);
-            return res.status(500).json({ 
+        if (!dosen_id) {
+            return res.status(400).json({ 
                 status: 'error', 
-                message: 'Gagal komunikasi dengan server SISTER atau database' 
-            });
+                message: 'Dosen ID diperlukan' 
+                });
         }
+
+        // 1. Tarik data "Live" dari API SISTER melalui Service
+        const rawSisterData = await syncToDB.syncPublikasiEachSDM(dosen_id);
+
+        // 2. Ambil semua ID publikasi milik dosen tersebut yang sudah ada di DB lokal
+        const localPublikasi = await prisma.publikasi.findMany({
+            where: {
+                id_user: dosen_id,
+                // Pengecekan 'NOT: { id: null }' dihapus karena 'id' adalah Primary Key (Non-Nullable)
+            },
+            select: {
+                id: true 
+            }
+        });
+
+        // Sederhanakan hasil query menjadi array ID
+        const existingSisterIds = localPublikasi.map((row: { id: string }) => row.id);
+
+        // 3. Gabungkan data SISTER dengan flag status keberadaan di lokal
+        const formattedData = rawSisterData.map((item: any) => {
+            return {
+                ...item,
+                existsLocally: existingSisterIds.includes(item.id) 
+            };
+        });
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Berhasil menarik data SISTER',
+            data: formattedData
+        });
+
+    } catch (error: any) {
+        console.error("Error getSisterPublikasi:", error);
+        return res.status(500).json({ 
+            status: 'error', 
+            message: 'Gagal komunikasi dengan server SISTER atau database' 
+        });
     }
+}
 }

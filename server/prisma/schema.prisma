@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
 }
 
 datasource db {
@@ -20,6 +20,8 @@ model anggota {
   id_orang                  String?           @db.Char(36)
   aktif                     Boolean           @default(true)
   peran                     String            @db.VarChar(50)
+  created_at                DateTime          @default(now()) @db.Timestamp(0)
+  updated_at                DateTime          @default(now()) @db.Timestamp(0)
   detail_penelitian         detail_penelitian @relation(fields: [litabmas_id], references: [id], onDelete: Cascade, map: "fk_penelitian2")
 
   @@index([litabmas_id], map: "idx_anggota_litabmas")
@@ -40,12 +42,12 @@ model bidang_keilmuan_pn {
 }
 
 model bidang_keilmuan_sdm {
-  id                 BigInt  @id @default(autoincrement())
+  id                 BigInt @id @default(autoincrement())
   urutan             Int
-  id_kelompok_bidang String  @db.Char(100)
-  kelompok_bidang    String? @db.Text
-  id_sdm             String  @db.Char(255)
-  users              users   @relation(fields: [id_sdm], references: [id], onDelete: Cascade, map: "fk_id_sdm")
+  id_kelompok_bidang String @db.Char(100)
+  kelompok_bidang    String @db.Text
+  id_sdm             String @db.Char(255)
+  users              users  @relation(fields: [id_sdm], references: [id], onDelete: Cascade, map: "fk_id_sdm")
 
   @@index([id_sdm], map: "fk_id_sdm")
 }
@@ -74,7 +76,9 @@ model detail_penelitian {
   dana_institusi_lain    Decimal?   @default(0.00) @db.Decimal(15, 2)
   in_kind                String?    @db.Text
   sk_penugasan           String?    @db.VarChar(255)
-  tanggal_sk_penugasan   String?    @db.VarChar(100)
+  tanggal_sk_penugasan   String?    @db.Text
+  created_at             DateTime   @default(now()) @db.Timestamp(0)
+  updated_at             DateTime   @default(now()) @db.Timestamp(0)
   anggota                anggota[]
   penelitian             penelitian @relation(fields: [id], references: [id], onDelete: Cascade, map: "fk_penelitian5")
   dokumen                dokumen[]
@@ -84,7 +88,7 @@ model detail_penelitian {
 model detail_publikasi {
   id                         String              @id @db.Char(36)
   kategori_kegiatan          String              @db.VarChar(255)
-  judul                      String?             @db.Text
+  judul                      String              @db.Text
   quartile                   Int?
   jenis_publikasi            String              @db.VarChar(255)
   tanggal                    String              @db.VarChar(255)
@@ -116,7 +120,7 @@ model detail_publikasi {
   asal_data                  String?             @db.VarChar(100)
   status                     String              @db.VarChar(50)
   komentar                   String              @db.Text
-  publikasi                  publikasi           @relation(fields: [id], references: [id], onUpdate: Restrict, map: "fk_dt_penelitian_pb")
+  publikasi                  publikasi           @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dt_penelitian_pb")
   publikasi_dokumen          publikasi_dokumen[]
   publikasi_penulis          publikasi_penulis[]
 }
@@ -167,7 +171,7 @@ model penelitian {
 model publikasi {
   id                String            @id @db.VarChar(255)
   kategori_kegiatan String?           @db.VarChar(255)
-  judul             String?           @db.Text
+  judul             String?           @db.VarChar(255)
   quartile          Int?
   jenis_publikasi   String?           @db.VarChar(255)
   tanggal           String?           @db.VarChar(100)
@@ -191,7 +195,6 @@ model publikasi_dokumen {
   keterangan       String?          @db.Text
   detail_publikasi detail_publikasi @relation(fields: [id_publikasi], references: [id], onDelete: Cascade, map: "publikasi_dokumen_ibfk_1")
 
-  @@unique([id_publikasi, nama_file], map: "unique_dokumen")
   @@index([id_publikasi], map: "publikasi_dokumen_ibfk_1")
 }
 
@@ -210,7 +213,6 @@ model publikasi_penulis {
   peran                     String                  @db.VarChar(100)
   detail_publikasi          detail_publikasi        @relation(fields: [id_publikasi], references: [id], onDelete: Cascade, map: "fk_dt_publikasi")
 
-  @@unique([id_publikasi, nama], map: "unique_penulis")
   @@index([id_publikasi], map: "fk_dt_publikasi")
 }
 

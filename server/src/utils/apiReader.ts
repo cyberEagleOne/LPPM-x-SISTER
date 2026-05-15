@@ -34,7 +34,7 @@ export class apiReader {
 
         if (umurMenit < 60 && umurMenit >= 0) {
           console.log(`Token masih valid (${umurMenit} menit).`);
-          return lastToken.token;
+          return lastToken.token as string;
         } else {
           // 2. DELETE FROM token WHERE id = ?
           // Menggunakan Prisma delete
