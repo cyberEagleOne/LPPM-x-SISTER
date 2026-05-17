@@ -241,6 +241,42 @@ model users {
   publikasi           publikasi[]
 }
 
+model periode_publikasi {
+  id                 String               @id @db.Char(36)
+  tahun              String               @db.VarChar(20)
+  semester           String               @db.VarChar(10)
+  aktif              Int                  @default(1) @db.TinyInt
+  publikasi_deadline publikasi_deadline[] @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model publikasi_deadline {
+  submission_start     DateTime?         @db.Date
+  revision_deadline    DateTime?         @db.Date
+  coordinator_deadline DateTime?         @db.Date
+  ketua_lppm_deadline  DateTime?         @db.Date
+  freeze_start         DateTime?         @db.Date
+  freeze_end           DateTime?         @db.Date
+  keterangan           String?           @db.Text
+  id_periode_publikasi String            @db.Char(36)
+  periode_publikasi    periode_publikasi @relation(fields: [id_periode_publikasi], references: [id], onDelete: Cascade, map: "fk_periode_publikasi")
+
+  @@index([id_periode_publikasi], map: "fk_periode_publikasi")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model publikasi_riwayat {
+  id      Int
+  tanggal DateTime @db.DateTime(0)
+  status  String   @db.VarChar(20)
+  aktor   String   @db.VarChar(100)
+  peran   String   @db.VarChar(20)
+  catatan String?  @db.Text
+
+  @@ignore
+}
+
 enum anggota_jenis {
   Dosen
   Mahasiswa

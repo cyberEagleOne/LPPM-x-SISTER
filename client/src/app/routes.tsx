@@ -59,7 +59,7 @@ import {
 // Dosen-specific pages
 import { DosenKonferensiPage } from "./admin/pages/DosenKonferensiPage";
 import { DosenPublikasiPage } from "./admin/pages/publikasi/DosenPublikasiPage";
-import { DosenKegiatanPage } from "./admin/pages/DosenKegiatanPage";
+import { DosenKegiatanPage } from "./admin/pages/kegiatan/DosenKegiatanPage";
 
 // New Hibah pages
 import { HibahInternalPage } from "./admin/pages/HibahInternalPage";
@@ -152,8 +152,8 @@ export const router = createBrowserRouter([
       { path: "publikasi-pengajuan", Component: PublikasiPengajuanPage },
       // Laporan Kegiatan (Dosen CRUD)
       { path: "laporan-kegiatan", Component: DosenKegiatanPage },
-      { path: "laporan-kegiatan/penelitian", element: <DosenKegiatanPage jenisParam="penelitian" /> },
-      { path: "laporan-kegiatan/pkm", element: <DosenKegiatanPage jenisParam="pkm" /> },
+      { path: "laporan-kegiatan/penelitian", element: <DosenKegiatanPage key="penelitian" jenisParam="penelitian" /> },
+      { path: "laporan-kegiatan/pkm", element: <DosenKegiatanPage key="pkm" jenisParam="pkm" /> },
       // Laporan Publikasi (Dosen CRUD)
       { path: "laporan-publikasi", Component: DosenPublikasiPage },
       { path: "laporan-publikasi/artikel", element: <DosenPublikasiPage key="artikel" jenisParam="artikel" /> },
@@ -200,8 +200,8 @@ export const router = createBrowserRouter([
       { path: "hibah/view/:id", Component: HibahViewPage },
       { path: "hibah/revisi/:id", Component: HibahRevisiPage },
       { path: "hibah/pemenang/:id", Component: HibahPemenangPage },
-      { path: "hibah/penelitian/:id", element: <ReviewHibahSharedPage type="penelitian" /> },
-      { path: "hibah/pkm/:id", element: <ReviewHibahSharedPage type="pkm" /> },
+      { path: "hibah/penelitian/:id", element: <ReviewHibahSharedPage key= "penelitain" type="penelitian" /> },
+      { path: "hibah/pkm/:id", element: <ReviewHibahSharedPage key="pkm" type="pkm" /> },
       { path: "hibah/laporan-review/:id", Component: LaporanReviewHibah },
       { path: "hibah/laporan/:id", Component: LaporanReviewHibah },
       { path: "quiz-pkm/:id", Component: ReviewQuizPKM },

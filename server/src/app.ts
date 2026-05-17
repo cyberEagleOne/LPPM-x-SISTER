@@ -3,6 +3,7 @@ import cors from 'cors';
 import sdmRoutes from './routes/sdmRoutes';
 import authRoutes from './routes/authRoutes';
 import publikasiRoutes from './routes/publikasiRoutes';
+import penelitianRoutes from './routes/penelitianRoutes';
 import reviewerRoutes from './routes/reviewerRoutes';
 import "reflect-metadata";
 import { connectDB } from './config/database';
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 
 app.use(routeSdm, sdmRoutes);
 app.use(routeSdm, publikasiRoutes);
+app.use(routeSdm, penelitianRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reviewer', reviewerRoutes);
 

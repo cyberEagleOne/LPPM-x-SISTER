@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from '../config/database';
 import { v4 as uuidv4 } from "uuid";
 import { syncToDB } from "../services/syncToDb";
-import { Publikasi } from '../../../shared/models'
+import { Publikasi, DetailPublikasi } from '../../../shared/models'
 
 export class PublikasiController {
     // --- Fungsi Lihat Data (GET) ---
@@ -31,34 +31,49 @@ export class PublikasiController {
                     }
                 }
             });
-
-            if (publikasi.length === 0) {
-                return res.status(200).json({ 
-                    status: 'success', 
+            // Flatten response so frontend can consume expected keys
+            if (!publikasi || publikasi.length === 0) {
+                return res.status(200).json({
+                    status: 'success',
                     message: 'Dosen tidak memiliki data publikasi.',
-                    data: [] 
+                    data: []
                 });
             }
 
-            /*
-            const formattedData = publikasi.map((p) => ({
-                id: p.id,
-                judul: p.detail_publikasi?.judul || p.judul,
-                quartile: p.detail_publikasi?.quartile || p.quartile,
-                jenis_publikasi: p.detail_publikasi?.jenis_publikasi || p.jenis_publikasi,
-                tanggal: p.detail_publikasi?.tanggal || p.tanggal,
-                penerbit: p.detail_publikasi?.penerbit,
-                isbn: p.detail_publikasi?.isbn,
-                status: p.detail_publikasi?.status,
-                tim_penulis: p.publikasi_penulis,
-                dokumen: p.publikasi_dokumen
-            }));
-            */
+            const formattedData = publikasi.map((p) => {
+                const detail = p.detail_publikasi;
+
+                return {
+                    ...p,
+                    // prefer detail fields when available
+                    judul: detail?.judul || p.judul,
+                    quartile: detail?.quartile ?? p.quartile,
+                    jenis_publikasi: detail?.jenis_publikasi || p.jenis_publikasi,
+                    tanggal: detail?.tanggal || p.tanggal,
+                    penerbit: detail?.penerbit || null,
+                    isbn: detail?.isbn || null,
+                    status: detail?.status || null,
+                    tim_penulis: detail?.publikasi_penulis || [],
+                    dokumen: detail?.publikasi_dokumen || [],
+                    nama_jurnal: detail?.nama_jurnal,
+                    doi: detail?.doi || null,
+                    issn: detail?.issn || null,
+                    volume: detail?.volume || null,
+                    nomor: detail?.nomor || null,
+                    halaman: detail?.halaman || null,
+                    seminar: detail?.seminar || null,
+                    prosiding: detail?.prosiding || null,
+                    komentar: detail?.komentar || null,
+                    kategori_kegiatan: detail?.kategori_kegiatan || null,
+                    kategori_capaian_luaran: detail?.kategori_capaian_luaran || null,
+                    
+                };
+            });
 
             return res.status(200).json({
                 status: 'success',
                 message: 'Berhasil mengambil data publikasi dosen',
-                data: publikasi
+                data: formattedData
             });
 
         } catch (error: any) {
