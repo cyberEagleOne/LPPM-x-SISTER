@@ -71,4 +71,5 @@ export interface DetailPenelitian {
   anggota?: AnggotaPenelitian[];
   mitra_litabmas?: MitraPenelitian[];
   dokumen?: DokumenPenelitian[];
+  status?: string; // Menambahkan properti status untuk menyimpan status penelitian
 }

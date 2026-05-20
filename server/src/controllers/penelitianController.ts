@@ -130,6 +130,7 @@ export class PenelitianController {
             in_kind: data.in_kind || null,
             sk_penugasan: data.sk_penugasan || null,
             tanggal_sk_penugasan: data.tanggal_sk_penugasan || null,
+            status: data.status || "draft",
           },
         });
       });
@@ -188,6 +189,7 @@ export class PenelitianController {
             in_kind: data.in_kind || null,
             sk_penugasan: data.sk_penugasan || null,
             tanggal_sk_penugasan: data.tanggal_sk_penugasan || null,
+            status: data.status || "draft",
           },
           update: {
             judul: data.judul,

@@ -870,7 +870,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               <div className="bg-white rounded-xl border border-slate-200 p-5">
                 <h4 className="text-sm text-slate-800 mb-3" style={{ fontWeight: 600 }}>Aksi</h4>
                 <div className="space-y-2">
-                  {selectedItem.status === "draft" && (
+                  {(selectedItem.status === "draft" || selectedItem.status === "revisi") && (
                     <>
                       <button onClick={() => handleSave(true)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700" style={{ fontWeight: 500 }}><Send className="w-4 h-4" /> Submit</button>
                       <button onClick={() => { setEditingItem(selectedItem); setFormData({ ...selectedItem }); setFormErrors({}); setViewMode("form"); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Edit className="w-4 h-4" /> Edit</button>
@@ -879,6 +879,9 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   )}
                   {["approved", "verified"].includes(selectedItem.status) && (
                     <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Download className="w-4 h-4" /> Export PDF</button>
+                  )}
+                  {["submitted"].includes(selectedItem.status) && (
+                    <button onClick={() => { setEditingItem(selectedItem); setFormData({ ...selectedItem }); setFormErrors({}); setViewMode("form"); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200" style={{ fontWeight: 500 }}><Edit className="w-4 h-4" /> Edit</button>
                   )}
                 </div>
               </div>
@@ -1356,9 +1359,36 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                           {/* Kolom Aksi */}
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-1">
-                              <button onClick={() => { setSelectedItem(item); setViewMode("detail"); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
-                              {["draft", "revisi"].includes(item.status) && <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setFormErrors({}); setViewMode("form"); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"><Edit className="w-4 h-4" /></button>}
-                              {item.status === "draft" && <button onClick={() => setConfirmModal({ open: true, title: "Hapus?", message: "Data akan dihapus.", variant: "danger", onConfirm: () => handleDelete(item.id) })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md"><Trash2 className="w-4 h-4" /></button>}
+                              <button 
+                              onClick={() => { 
+                                setSelectedItem(item); 
+                                setViewMode("detail"); }} 
+                              className="p-1.5 
+                              text-slate-400 
+                              hover:text-blue-600 
+                              hover:bg-blue-50 
+                              rounded-md"><Eye className="w-4 h-4" />
+                              </button>
+                              {["draft", "revisi"].includes(item.status) && <button 
+                              onClick={() => { 
+                                setEditingItem(item); 
+                                setFormData({ ...item }); 
+                                setFormErrors({}); 
+                                setViewMode("form"); }} 
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md">
+                                  <Edit className="w-4 h-4" /></button>}
+                              {item.status === "draft" && <button 
+                              onClick={() => setConfirmModal({ 
+                                open: true, 
+                                title: "Hapus?", 
+                                message: "Data akan dihapus.", 
+                                variant: "danger", 
+                                onConfirm: () => handleDelete(item.id) })} 
+                                className="p-1.5 
+                                text-slate-400 
+                                hover:text-red-600 
+                                hover:bg-red-50 rounded-md">
+                                  <Trash2 className="w-4 h-4" /></button>}
                             </div>
                           </td>
                         </tr>

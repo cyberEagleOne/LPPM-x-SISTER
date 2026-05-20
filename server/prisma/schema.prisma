@@ -14,7 +14,7 @@ model anggota {
   litabmas_id               String            @db.Char(36)
   nama                      String            @db.VarChar(255)
   jenis                     anggota_jenis
-  id_sdm                    String?           @db.Char(36)
+  id_sdm                    String?           @db.Char(255)
   id_peserta_didik          String?           @db.Char(36)
   nomor_induk_peserta_didik String?           @db.VarChar(50)
   id_orang                  String?           @db.Char(36)
@@ -22,6 +22,7 @@ model anggota {
   peran                     String            @db.VarChar(50)
   created_at                DateTime          @default(now()) @db.Timestamp(0)
   updated_at                DateTime          @default(now()) @db.Timestamp(0)
+  users                     users?            @relation(fields: [id_sdm], references: [id], onDelete: Cascade, map: "anggota_ibfk_1")
   detail_penelitian         detail_penelitian @relation(fields: [litabmas_id], references: [id], onDelete: Cascade, map: "fk_penelitian2")
 
   @@index([litabmas_id], map: "idx_anggota_litabmas")
@@ -79,6 +80,7 @@ model detail_penelitian {
   tanggal_sk_penugasan   String?    @db.Text
   created_at             DateTime   @default(now()) @db.Timestamp(0)
   updated_at             DateTime   @default(now()) @db.Timestamp(0)
+  status                 String     @db.VarChar(50)
   anggota                anggota[]
   penelitian             penelitian @relation(fields: [id], references: [id], onDelete: Cascade, map: "fk_penelitian5")
   dokumen                dokumen[]
@@ -168,6 +170,14 @@ model penelitian {
   @@index([id_users], map: "fk_users")
 }
 
+model periode_publikasi {
+  id                 String              @id @db.Char(36)
+  tahun              String              @db.VarChar(20)
+  semester           String              @db.VarChar(10)
+  aktif              Int                 @default(1) @db.TinyInt
+  publikasi_deadline publikasi_deadline?
+}
+
 model publikasi {
   id                String            @id @db.VarChar(255)
   kategori_kegiatan String?           @db.VarChar(255)
@@ -181,6 +191,18 @@ model publikasi {
   users             users             @relation(fields: [id_user], references: [id], onDelete: Cascade, map: "fk_id_sdm2")
 
   @@index([id_user], map: "fk_id_sdm2")
+}
+
+model publikasi_deadline {
+  submission_start     DateTime?         @db.Date
+  revision_deadline    DateTime?         @db.Date
+  coordinator_deadline DateTime?         @db.Date
+  ketua_lppm_deadline  DateTime?         @db.Date
+  freeze_start         DateTime?         @db.Date
+  freeze_end           DateTime?         @db.Date
+  keterangan           String?           @db.Text
+  id_periode_publikasi String            @id @db.Char(36)
+  periode_publikasi    periode_publikasi @relation(fields: [id_periode_publikasi], references: [id], onDelete: Cascade, map: "fk_periode_publikasi")
 }
 
 model publikasi_dokumen {
@@ -216,6 +238,18 @@ model publikasi_penulis {
   @@index([id_publikasi], map: "fk_dt_publikasi")
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model publikasi_riwayat {
+  id      Int
+  tanggal DateTime @db.DateTime(0)
+  status  String   @db.VarChar(20)
+  aktor   String   @db.VarChar(100)
+  peran   String   @db.VarChar(20)
+  catatan String?  @db.Text
+
+  @@ignore
+}
+
 model token {
   id        Int      @id @default(autoincrement())
   token     String?  @db.Text
@@ -236,45 +270,10 @@ model users {
   updated_at          DateTime?             @db.Timestamp(0)
   fakultas_id         BigInt?               @db.UnsignedBigInt
   prodi_id            BigInt?               @db.UnsignedBigInt
+  anggota             anggota[]
   bidang_keilmuan_sdm bidang_keilmuan_sdm[]
   penelitian          penelitian[]
   publikasi           publikasi[]
-}
-
-model periode_publikasi {
-  id                 String               @id @db.Char(36)
-  tahun              String               @db.VarChar(20)
-  semester           String               @db.VarChar(10)
-  aktif              Int                  @default(1) @db.TinyInt
-  publikasi_deadline publikasi_deadline[] @ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model publikasi_deadline {
-  submission_start     DateTime?         @db.Date
-  revision_deadline    DateTime?         @db.Date
-  coordinator_deadline DateTime?         @db.Date
-  ketua_lppm_deadline  DateTime?         @db.Date
-  freeze_start         DateTime?         @db.Date
-  freeze_end           DateTime?         @db.Date
-  keterangan           String?           @db.Text
-  id_periode_publikasi String            @db.Char(36)
-  periode_publikasi    periode_publikasi @relation(fields: [id_periode_publikasi], references: [id], onDelete: Cascade, map: "fk_periode_publikasi")
-
-  @@index([id_periode_publikasi], map: "fk_periode_publikasi")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model publikasi_riwayat {
-  id      Int
-  tanggal DateTime @db.DateTime(0)
-  status  String   @db.VarChar(20)
-  aktor   String   @db.VarChar(100)
-  peran   String   @db.VarChar(20)
-  catatan String?  @db.Text
-
-  @@ignore
 }
 
 enum anggota_jenis {

@@ -298,7 +298,8 @@ export class syncToDB {
                       dana_institusi_lain: detail.dana_institusi_lain || null,
                       in_kind: detail.in_kind || null,
                       sk_penugasan: detail.sk_penugasan || null,
-                      tanggal_sk_penugasan: detail.tanggal_sk_penugasan || null
+                      tanggal_sk_penugasan: detail.tanggal_sk_penugasan || null,
+                      status: detail.status || 'Approved' // Default ke 'Approved' jika status tidak tersedia
                     }
                   });
 
@@ -309,20 +310,11 @@ export class syncToDB {
                     });
 
                     for (const anggota of detail.anggota) {
-                      const anggotaValidation = SyncValidation.validateAnggota(anggota);
-                      if (!anggotaValidation.valid) {
-                        SyncLogger.warn('syncPenelitian', 'Invalid anggota record skipped', {
-                          penelitian_id: idPenelitian,
-                          errors: anggotaValidation.errors
-                        });
-                        continue;
-                      }
-
                       const jenisAnggota = EnumMapper.mapAnggotaJenisSafe(anggota.jenis);
 
                       await tx.anggota.create({
                         data: {
-                          id: anggota.id,
+                          id: anggota.id || undefined,
                           litabmas_id: idPenelitian,
                           nama: anggota.nama || 'Unknown',
                           jenis: jenisAnggota as any,
@@ -760,6 +752,8 @@ export class syncToDB {
  * Usage: npx ts-node src/services/syncToDb.ts
  */
 if (require.main === module) {
+  syncToDB.syncPenelitianAllSDM();
+  /*
   (async () => {
     try {
       SyncLogger.info('CLI', 'Starting full sync process...');
@@ -787,4 +781,5 @@ if (require.main === module) {
       process.exit(1);
     }
   })();
+  */
 }
