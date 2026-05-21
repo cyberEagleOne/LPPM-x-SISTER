@@ -2,9 +2,165 @@ import { Request, Response } from "express";
 import { prisma } from '../config/database';
 import { v4 as uuidv4 } from "uuid";
 import { syncToDB } from "../services/syncToDb";
-import { Publikasi, DetailPublikasi } from '../../../shared/models'
+import type { PeriodePublikasi } from '../../../shared/models'
 
 export class PublikasiController {
+    private static formatDate(value: Date | string | null | undefined) {
+        if (!value) return null;
+        if (value instanceof Date) return value.toISOString().split('T')[0];
+        return String(value).split('T')[0];
+    }
+
+    private static async ensureDefaultPeriodePublikasi() {
+        const count = await prisma.periode_publikasi.count();
+        if (count > 0) return;
+
+        const hasSubmissionDeadline = await PublikasiController.hasSubmissionDeadlineColumn();
+
+        await prisma.periode_publikasi.create({
+            data: {
+                id: "2025/2026-Genap",
+                tahun: "2025/2026",
+                semester: "Genap",
+                aktif: 1
+            }
+        });
+
+        if (hasSubmissionDeadline) {
+            await prisma.$executeRaw`
+                INSERT INTO publikasi_deadline (
+                    id_periode_publikasi,
+                    submission_start,
+                    submission_deadline,
+                    revision_deadline,
+                    coordinator_deadline,
+                    ketua_lppm_deadline,
+                    freeze_start,
+                    freeze_end,
+                    keterangan
+                ) VALUES (
+                    '2025/2026-Genap',
+                    '2026-03-01',
+                    '2026-05-31',
+                    '2026-06-15',
+                    '2026-06-30',
+                    '2026-07-15',
+                    '2026-07-16',
+                    '2026-08-01',
+                    'Periode pelaporan publikasi semester ganjil tahun ajaran 2026/2027. Keterlambatan tidak akan diproses.'
+                )
+            `;
+        } else {
+            await prisma.$executeRaw`
+                INSERT INTO publikasi_deadline (
+                    id_periode_publikasi,
+                    submission_start,
+                    revision_deadline,
+                    coordinator_deadline,
+                    ketua_lppm_deadline,
+                    freeze_start,
+                    freeze_end,
+                    keterangan
+                ) VALUES (
+                    '2025/2026-Genap',
+                    '2026-03-01',
+                    '2026-06-15',
+                    '2026-06-30',
+                    '2026-07-15',
+                    '2026-07-16',
+                    '2026-08-01',
+                    'Periode pelaporan publikasi semester ganjil tahun ajaran 2026/2027. Keterlambatan tidak akan diproses.'
+                )
+            `;
+        }
+    }
+
+    private static async hasSubmissionDeadlineColumn() {
+        const rows = await prisma.$queryRaw<{ total: bigint }[]>`
+            SELECT COUNT(*) AS total
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'publikasi_deadline'
+              AND COLUMN_NAME = 'submission_deadline'
+        `;
+
+        return Number(rows[0]?.total || 0) > 0;
+    }
+
+    static async getPeriodePublikasi(_req: Request, res: Response) {
+        try {
+            await PublikasiController.ensureDefaultPeriodePublikasi();
+            const hasSubmissionDeadline = await PublikasiController.hasSubmissionDeadlineColumn();
+
+            const periodes = hasSubmissionDeadline
+                ? await prisma.$queryRaw<any[]>`
+                    SELECT
+                        pp.id,
+                        pp.tahun,
+                        pp.semester,
+                        pp.aktif,
+                        pd.submission_start,
+                        pd.submission_deadline,
+                        pd.revision_deadline,
+                        pd.coordinator_deadline,
+                        pd.ketua_lppm_deadline,
+                        pd.freeze_start,
+                        pd.freeze_end,
+                        pd.keterangan
+                    FROM periode_publikasi pp
+                    LEFT JOIN publikasi_deadline pd ON pd.id_periode_publikasi = pp.id
+                    ORDER BY pp.tahun DESC, pp.semester ASC
+                `
+                : await prisma.$queryRaw<any[]>`
+                    SELECT
+                        pp.id,
+                        pp.tahun,
+                        pp.semester,
+                        pp.aktif,
+                        pd.submission_start,
+                        NULL AS submission_deadline,
+                        pd.revision_deadline,
+                        pd.coordinator_deadline,
+                        pd.ketua_lppm_deadline,
+                        pd.freeze_start,
+                        pd.freeze_end,
+                        pd.keterangan
+                    FROM periode_publikasi pp
+                    LEFT JOIN publikasi_deadline pd ON pd.id_periode_publikasi = pp.id
+                    ORDER BY pp.tahun DESC, pp.semester ASC
+                `;
+
+            const data: PeriodePublikasi[] = periodes.map((periode) => ({
+                id: periode.id,
+                tahun: periode.tahun,
+                semester: periode.semester,
+                aktif: Boolean(periode.aktif),
+                deadlines: periode.submission_start || periode.revision_deadline || periode.keterangan ? {
+                    submissionStart: PublikasiController.formatDate(periode.submission_start),
+                    submissionDeadline: PublikasiController.formatDate(periode.submission_deadline),
+                    revisionDeadline: PublikasiController.formatDate(periode.revision_deadline),
+                    coordinatorDeadline: PublikasiController.formatDate(periode.coordinator_deadline),
+                    ketuaLppmDeadline: PublikasiController.formatDate(periode.ketua_lppm_deadline),
+                    freezeStart: PublikasiController.formatDate(periode.freeze_start),
+                    freezeEnd: PublikasiController.formatDate(periode.freeze_end),
+                    keterangan: periode.keterangan
+                } : undefined
+            }));
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Berhasil mengambil periode publikasi',
+                data
+            });
+        } catch (error: any) {
+            console.error("Error getPeriodePublikasi:", error);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Gagal mengambil periode publikasi'
+            });
+        }
+    }
+
     // --- Fungsi Lihat Data (GET) ---
     static async getListPublikasi(req: Request, res: Response) {
         try {
@@ -128,7 +284,7 @@ export class PublikasiController {
                         penerbit: data.penerbit || null,
                         isbn: data.isbn || null,
                         nama_jurnal: data.nama_jurnal || null,
-                        doi: data.urlDoi || null, // Mapping urlDoi ke kolom doi
+                        doi: data.doi || data.urlDoi || null,
                         issn: data.issn || null,
                         volume: data.volume || null,
                         nomor: data.nomor || null,
@@ -172,15 +328,16 @@ export class PublikasiController {
                         tanggal: data.tanggal,
                         penerbit: data.penerbit || null,
                         isbn: data.isbn || null,
-                        tautan: data.urlTautan || null, // Mapping urlTautan ke kolom tautan
+                        tautan: data.tautan || data.urlTautan || null,
                         keterangan: data.keterangan || null,
-                        nama_jurnal: data.namaJurnal || null,
+                        nama_jurnal: data.nama_jurnal || data.namaJurnal || null,
                         halaman: data.halaman || null,
                         edisi: data.edisi || null,
                         nomor: data.nomor ? Number(data.nomor) : null, // Memastikan tipe data number
-                        doi: data.urlDoi || null,
+                        doi: data.doi || data.urlDoi || null,
                         issn: data.issn || null,
-                        quartile: data.quartile ? Number(data.quartile) : null
+                        quartile: data.quartile ? Number(data.quartile) : null,
+                        status: data.status || undefined
                     }
                 });
 
@@ -190,8 +347,9 @@ export class PublikasiController {
                     data: {
                         judul: data.judul,
                         tanggal: data.tanggal,
-                        // Update status jika dikirim dari frontend
-                        ...(data.status && { status: data.status }) 
+                        kategori_kegiatan: data.kategori_kegiatan || undefined,
+                        quartile: data.quartile ? Number(data.quartile) : null,
+                        jenis_publikasi: data.jenis_publikasi || undefined
                     }
                 });
             });

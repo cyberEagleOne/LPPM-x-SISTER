@@ -195,6 +195,7 @@ model publikasi {
 
 model publikasi_deadline {
   submission_start     DateTime?         @db.Date
+  submission_deadline  DateTime?         @db.Date
   revision_deadline    DateTime?         @db.Date
   coordinator_deadline DateTime?         @db.Date
   ketua_lppm_deadline  DateTime?         @db.Date

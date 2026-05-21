@@ -4,6 +4,7 @@ import { PublikasiController } from "../controllers/publikasiController";
 const router = Router();
 
 // ROUTE LOKAL
+router.get('/publikasi/periode', PublikasiController.getPeriodePublikasi);
 router.get('/publikasi', PublikasiController.getListPublikasi);
 router.post('/publikasi', PublikasiController.createPublikasi);
 router.put('/publikasi/:id', PublikasiController.updatePublikasi);

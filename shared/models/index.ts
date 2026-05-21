@@ -7,6 +7,8 @@ export * from './Penelitian/Penelitian'
 // Publikasi
 export { DetailPublikasi, PublikasiDokumen, PublikasiPenulis } from './Publikasi/DetailPublikasi'
 export * from './Publikasi/Publikasi'
+export * from './Publikasi/PeriodePublikasi'
+export * from './Publikasi/DetailPublikasi'
 
 // SDM
 export * from './Sdm/BidangKeilmuanSdm'

@@ -5,7 +5,7 @@ import {
   AlertCircle, ExternalLink, RefreshCw, Calendar, Clock, Info, X
 } from "lucide-react";
 import { PageWrapper } from "../../components/PageWrapper";
-import { StatusBadge, type StatusType } from "../../components/StatusBadge";
+import { StatusBadge } from "../../components/StatusBadge";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { SkeletonTable } from "../../components/SkeletonLoader";
@@ -13,81 +13,15 @@ import { StepperStatus } from "../../components/StepperStatus";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { SyncSisterModal } from "../../components/SyncSisterModal";
 import { useAuth } from "../../context/AuthContext";
-import { PublikasiPenulis, PublikasiDokumen} from "../../../../../../shared/models"
+import type {
+  JenisPublikasi,
+  PeriodePublikasi,
+  PublikasiDokumen,
+  PublikasiItem,
+  PublikasiPenulis,
+} from "../../../../../../shared/models";
 
 /* ────────────────── Types ────────────────── */
-
-export type JenisPublikasi = "artikel" | "buku" | "haki" | "prototipe";
-
-export interface PeriodePublikasi {
-  id: string;
-  tahun: string;
-  semester: string;
-  aktif: boolean;
-  deadlines?: PeriodeDeadlines;
-}
-
-export interface PeriodeDeadlines {
-  submissionStart: string | null;
-  submissionDeadline: string | null;
-  revisionDeadline: string | null;
-  coordinatorDeadline: string | null;
-  ketuaLppmDeadline: string | null;
-  freezeStart: string | null;
-  freezeEnd: string | null;
-  keterangan: string | null;
-}
-
-export interface RiwayatAktivitas {
-  id: string;
-  tanggal: string; 
-  status: string;
-  aktor: string;
-  peran: string; // Contoh: "Dosen", "Reviewer", "Admin LPPM"
-  catatan?: string | null;
-}
-
-export interface PublikasiItem {
-  id: string;
-  periodeId: string;
-  jenis_publikasi?: string; 
-  jenis: JenisPublikasi;
-  judul: string;
-  quartile?: number | "";   
-  kategori_kegiatan?: string;
-  kategori_capaian_luaran?: string;
-  // Artikel
-  nama_jurnal?: string;
-  doi?: string;
-  tautan?: string;
-  jenisJurnal?: string;
-  issn?: string;
-  halaman?: string;
-  edisi?: string;
-  volume?: number;
-  nomor?: number;
-  keterangan?: string;
-  // Buku
-  penerbit?: string;
-  isbn?: string;
-  jumlah_halaman: number | null;
-  // HaKI
-  nomorSertifikat?: string;
-  jenisHaki?: string;
-  // Prototipe
-  namaProto?: string;
-  jenisProto?: string;
-  urlDokumen?: string;
-  // Common
-  tanggal: string;
-  status: StatusType;
-  tanggalDibuat: string;
-  urutanPenulis: number | "";
-  penulisDosen: PublikasiPenulis[];
-  penulisMahasiswa: PublikasiPenulis[];
-  riwayat?: RiwayatAktivitas[];
-  dokumen: PublikasiDokumen[];
-}
 
 type ViewMode = "periode" | "list" | "form" | "detail";
 
@@ -165,27 +99,6 @@ export const KATEGORI_BUKU = [
 export const JENIS_JURNAL_OPTIONS = ["Sinta 1", "Sinta 2", "Sinta 3", "Sinta 4", "Sinta 5", "Sinta 6", "Scopus Q1", "Scopus Q2", "Scopus Q3", "Scopus Q4", "Prosiding Terindeks", "Prosiding Nasional"];
 export const JENIS_HAKI_OPTIONS = ["Hak Cipta", "Paten", "Paten Sederhana", "Merek", "Desain Industri"];
 export const JENIS_PROTO_OPTIONS = ["Perangkat Lunak", "Perangkat Keras", "Modul", "Sistem", "Alat"];
-
-export const NEW_PERIODE: PeriodePublikasi[] = [
-{ 
-    id: "2025/2026-Genap", 
-    tahun: "2025/2026", 
-    semester: "Genap", 
-    aktif: true,
-    deadlines: {
-      submissionStart: "2026-03-01",
-      submissionDeadline: "2026-05-31",
-      revisionDeadline: "2026-06-15",
-      coordinatorDeadline: "2026-06-30",
-      ketuaLppmDeadline: "2026-07-15",
-      freezeStart: "2026-07-16",
-      freezeEnd: "2026-08-01",
-      keterangan: "Periode pelaporan publikasi semester ganjil tahun ajaran 2026/2027. Keterlambatan tidak akan diproses."
-    }
-  },
-  { id: "UNKNOWN-PERIODE", tahun: "Tidak Diketahui", semester: "Waktu", aktif: false }
-]; 
-
 
 export const JENIS_LABELS: Record<JenisPublikasi, string> = {
   artikel: "Artikel",
@@ -311,7 +224,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const [periodeList, setPeriodeList] = useState<PeriodePublikasi[]>([]);
   const [filterJenis, setFilterJenis] = useState<JenisPublikasi | "semua">(jenisParam || "semua");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showEmptyPeriods, setShowEmptyPeriods] = useState(true);
+  const [showEmptyPeriods, setShowEmptyPeriods] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const formRef = useRef<HTMLDivElement>(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "danger" as "danger" | "warning" | "success", onConfirm: () => {} });
@@ -380,17 +293,19 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
         setLoading(true);
         if (!user?.id) return;
 
-        const response = await fetch(`http://localhost:3000/api/sdm/publikasi?dosen_id=${user.id}`);
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        const result = await response.json();
+        const [publikasiResponse, periodeResponse] = await Promise.all([
+          fetch(`http://localhost:3000/api/sdm/publikasi?dosen_id=${user.id}`),
+          fetch(`http://localhost:3000/api/sdm/publikasi/periode`)
+        ]);
 
-        if (result.status === 'success') {
-          // DEBUG 1: CEK DATA MENTAH DARI DATABASE
-          console.group("DEBUGGING PUBLIKASI");
-          console.log("1. Total Data Asli dari Backend:", result.data.length);
-          console.log("   Isi Data Asli:", result.data);
+        if (!publikasiResponse.ok) throw new Error(`Server error: ${publikasiResponse.status}`);
+        if (!periodeResponse.ok) throw new Error(`Server error: ${periodeResponse.status}`);
 
-          const dataDenganPeriode = result.data.map((item: any) => {
+        const publikasiResult = await publikasiResponse.json();
+        const periodeResult = await periodeResponse.json();
+
+        if (publikasiResult.status === 'success' && periodeResult.status === 'success') {
+          const dataDenganPeriode = publikasiResult.data.map((item: any) => {
             const rawTanggal = item.tanggalDibuat || item.tanggal || "";
             const isUnknown = !rawTanggal || rawTanggal.toLowerCase() === "unknown";
             const idPublikasi = item.id;
@@ -457,29 +372,25 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             return {
               ...item,
               id: String(item.id),
-              
+              judul: item.judul || "Tanpa Judul",
               tanggal: rawTanggal,
-              
+              status: item.status || "draft",
+              jumlah_halaman: item.jumlah_halaman ?? null,
               tanggalDibuat: isUnknown ? "Tidak Diketahui" : formatTanggalIndo(rawTanggal), 
               periodeId: getPeriodeFromDate(rawTanggal), 
               jenis: getJenisFromJenisPublikasi(item.jenis_publikasi),
               penulisDosen: penulisDosen,
               penulisMahasiswa: penulisMahasiswa,
-              riwayat: [
-                { id: "1", tanggal: "10 April 2026, 09:00", status: "draft", aktor: user.name, peran: "Dosen", catatan: "Menyimpan draf awal dokumen." },
-                { id: "2", tanggal: "12 April 2026, 14:30", status: "submitted", aktor: user.name, peran: "Dosen", catatan: null },
-                { id: "3", tanggal: "15 April 2026, 10:15", status: "revisi", aktor: "Bpk. Budi", peran: "Reviewer", catatan: "Mohon perbaiki format penulisan pada dokumen lampiran sesuai panduan terbaru LPPM." },
-                { id: "4", tanggal: "18 April 2026, 11:00", status: "approved", aktor: "Admin LPPM", peran: "Admin", catatan: "Dokumen sudah sesuai dan diverifikasi." }
-              ].reverse()
+              riwayat: []
             };
           });
 
-          // DEBUG 2: CEK HASIL MAPPING
-          console.log("2. Data Setelah di-Mapping (Cek periodeId-nya):", dataDenganPeriode);
-
           const uniquePeriodesMap = new Map<string, PeriodePublikasi>();
-          
-          NEW_PERIODE.forEach(p => uniquePeriodesMap.set(p.id, p));
+
+          (periodeResult.data as PeriodePublikasi[]).forEach((periode) => {
+            uniquePeriodesMap.set(periode.id, periode);
+          });
+
           dataDenganPeriode.forEach((item: PublikasiItem) => {
             const pId = item.periodeId;
             if (!uniquePeriodesMap.has(pId) && pId !== "UNKNOWN-PERIODE") {
@@ -487,6 +398,15 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               uniquePeriodesMap.set(pId, { id: pId, tahun, semester, aktif: false });
             }
           });
+
+          if (dataDenganPeriode.some((item: PublikasiItem) => item.periodeId === "UNKNOWN-PERIODE")) {
+            uniquePeriodesMap.set("UNKNOWN-PERIODE", {
+              id: "UNKNOWN-PERIODE",
+              tahun: "Tidak Diketahui",
+              semester: "Waktu",
+              aktif: false
+            });
+          }
 
           const dynamicPeriodes = Array.from(uniquePeriodesMap.values());
           
@@ -496,20 +416,11 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
             return b.id.localeCompare(a.id);
           });
 
-          if (dynamicPeriodes.length > 0 && dynamicPeriodes[0].id !== "UNKNOWN-PERIODE") {
-             dynamicPeriodes.forEach(p => p.aktif = false);
-             dynamicPeriodes[0].aktif = true;
-          }
-
-          // DEBUG 3: CEK KOTAK PERIODE
-          console.log("3. Daftar Kotak Periode yang Terbuat:", dynamicPeriodes);
-          console.groupEnd();
-
           setPeriodeList(dynamicPeriodes);
           setPublikasiList(dataDenganPeriode);
           
         } else {
-          showToast(result.message || "Gagal memuat data", "error");
+          showToast(publikasiResult.message || periodeResult.message || "Gagal memuat data", "error");
         }
       } catch (error: any) {
         console.error("Fetch error:", error);
@@ -553,12 +464,6 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
       [field]: prev[field].filter((item) => item.id !== id)
     }));
   };
-
-  useEffect(() => { 
-    const t = setTimeout(() => setLoading(false), 400); 
-    return () => clearTimeout(t); 
-  }, 
-  []);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message: msg, type });
@@ -1430,26 +1335,11 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const jenisTitle = jenisParam ? JENIS_LABELS[jenisParam] : "Semua Publikasi";
   const visiblePeriods = periodeList.filter((p) => {
     const count = publikasiList.filter((pub) => pub.periodeId === p.id && (jenisParam ? pub.jenis === jenisParam : true)).length;
-    const isHardcoded = NEW_PERIODE.some(np => np.id === p.id);
-    return showEmptyPeriods || count > 0 || isHardcoded;
+    return showEmptyPeriods || count > 0 || p.aktif;
   });
   return (
     <PageWrapper title={`Laporan Publikasi — ${jenisTitle}`} subtitle="Pilih periode untuk melihat atau menambah publikasi"
       breadcrumbs={[{ label: "Dosen" }, { label: "Laporan Publikasi", path: "/admin/laporan-publikasi/artikel"}, { label: jenisTitle }]}
-      actions={
-        <button 
-          onClick={() => setShowEmptyPeriods(!showEmptyPeriods)}
-          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition-all ${
-            showEmptyPeriods 
-              ? "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200" 
-              : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-          }`}
-          style={{ fontWeight: 500 }}
-        >
-          <Eye className="w-4 h-4" /> 
-          {showEmptyPeriods ? "Sembunyikan yang Kosong" : "Tampilkan Semua"}
-        </button>
-      }
       >
       {loading ? <SkeletonTable rows={4} /> : (
         <div className="space-y-3">

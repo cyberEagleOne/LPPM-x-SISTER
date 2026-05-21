@@ -1,3 +1,30 @@
+export type PublikasiStatus =
+  | "draft"
+  | "submitted"
+  | "pending-review"
+  | "revisi"
+  | "submit-revisi"
+  | "approved"
+  | "rejected"
+  | "verified"
+  | "read-finance"
+  | "lunas"
+  | "hutang"
+  | "active"
+  | "inactive"
+  | "expired";
+
+export type JenisPublikasi = "artikel" | "buku" | "haki" | "prototipe";
+
+export interface RiwayatAktivitas {
+  id: string;
+  tanggal: string;
+  status: string;
+  aktor: string;
+  peran: string;
+  catatan?: string | null;
+}
+
 export interface PublikasiDokumen {
   id: string;              
   id_publikasi: string;    
@@ -12,7 +39,7 @@ export interface PublikasiDokumen {
 
 export interface PublikasiPenulis {
   id: string;
-  id_penulis: number;          
+  id_penulis: number | string;          
   id_publikasi: string;        
   nama: string;               
   jenis: 'Dosen' | 'Mahasiswa' | 'Profesional/Mitra'; 
@@ -22,7 +49,7 @@ export interface PublikasiPenulis {
   id_orang: string | null;    
   urutan: number;              
   afiliasi: string;           
-  corresponding_author: number | null; 
+  corresponding_author: number | boolean | string | null; 
   peran: string;               
 }
 
@@ -63,4 +90,44 @@ export interface DetailPublikasi {
 
   penulis?: PublikasiPenulis[];
   dokumen?: PublikasiDokumen[];
+}
+
+export interface PublikasiItem {
+  id: string;
+  periodeId: string;
+  jenis_publikasi?: string;
+  id_jenis_publikasi?: number | "";
+  jenis: JenisPublikasi;
+  judul: string;
+  quartile?: number | "";
+  kategori_kegiatan?: string;
+  id_kategori_kegiatan?: number | "";
+  kategori_capaian_luaran?: string;
+  id_kategori_capaian_luaran?: number | null | "";
+  nama_jurnal?: string;
+  doi?: string;
+  tautan?: string;
+  jenisJurnal?: string;
+  issn?: string;
+  halaman?: string;
+  edisi?: string;
+  volume?: number;
+  nomor?: number;
+  keterangan?: string;
+  penerbit?: string;
+  isbn?: string;
+  jumlah_halaman: number | null;
+  nomorSertifikat?: string;
+  jenisHaki?: string;
+  namaProto?: string;
+  jenisProto?: string;
+  urlDokumen?: string;
+  tanggal: string;
+  status: PublikasiStatus;
+  tanggalDibuat: string;
+  urutanPenulis: number | "";
+  penulisDosen: PublikasiPenulis[];
+  penulisMahasiswa: PublikasiPenulis[];
+  riwayat?: RiwayatAktivitas[];
+  dokumen: PublikasiDokumen[];
 }
