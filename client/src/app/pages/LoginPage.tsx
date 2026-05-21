@@ -1,39 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Mail, Eye, EyeOff, CheckCircle2, ArrowLeft, ShieldCheck, BookOpen, Star, Globe } from "lucide-react";
-import { useAuth, ROLE_LABELS, type UserRole } from "../admin/context/AuthContext";
+import { Mail, Eye, EyeOff, CheckCircle2, ArrowLeft } from "lucide-react";
+import { useAuth, type User } from "../admin/context/AuthContext";
 import { getDefaultAdminLanding } from "../admin/config/roleTemplates";
 import praditaLogo from "@/assets/pradita-logo.png";
 import praditaBuilding from "@/assets/pradita-building.png";
 
-const DEMO_ROLES: {
-  role: UserRole; label: string; desc: string;
-  icon: React.ReactNode; color: string; bg: string; border: string;
-}[] = [
-  {
-    role: "administrator", label: "Administrator", desc: "Kelola semua data & pengguna",
-    icon: <ShieldCheck className="w-5 h-5" />,
-    color: "text-[#E30613]", bg: "bg-red-50", border: "border-red-200 hover:border-[#E30613]",
-  },
-  {
-    role: "dosen", label: "Dosen", desc: "Ajukan hibah, konferensi & publikasi",
-    icon: <BookOpen className="w-5 h-5" />,
-    color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-500",
-  },
-  {
-    role: "reviewer", label: "Reviewer", desc: "Review proposal hibah & laporan",
-    icon: <Star className="w-5 h-5" />,
-    color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200 hover:border-amber-500",
-  },
-  {
-    role: "halaman-umum", label: "Halaman Umum", desc: "Lihat pengumuman LPPM publik",
-    icon: <Globe className="w-5 h-5" />,
-    color: "text-green-600", bg: "bg-green-50", border: "border-green-200 hover:border-green-500",
-  },
-];
-
 export function LoginPage() {
-  const [showManual, setShowManual] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,14 +15,15 @@ export function LoginPage() {
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleDemoLogin = (role: UserRole) => {
-    login(role);
-    navigate(getDefaultAdminLanding(role));
-  };
-
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login("dosen");
+    const dummyManualUser: User = {
+      id: "1",
+      name: "User",
+      email: email,
+      role: "dosen", // Role statis paling aman untuk kebutuhan render sebelum ada API sungguhan
+    };
+    login(dummyManualUser);
     navigate(getDefaultAdminLanding("dosen"));
   };
 
@@ -70,58 +44,9 @@ export function LoginPage() {
             <span className="text-lg text-gray-800 tracking-wide" style={{ fontWeight: 700 }}>LPPM</span>
           </Link>
 
-          {!showManual ? (
-            /* ── Demo Mode View ── */
-            <>
-              <div className="mb-6">
-                <h2 className="text-2xl text-gray-900 mb-1" style={{ fontWeight: 700 }}>Selamat Datang</h2>
-                <p className="text-sm text-gray-400">Pilih role untuk langsung masuk ke dashboard</p>
-              </div>
-
-              {/* Role cards — klik langsung login */}
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                {DEMO_ROLES.map(({ role, label, desc, icon, color, bg, border }) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => handleDemoLogin(role)}
-                    className={`flex flex-col items-start gap-2.5 p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md active:scale-[0.97] ${bg} ${border}`}
-                  >
-                    <div className={color}>{icon}</div>
-                    <div>
-                      <p className="text-sm text-gray-900" style={{ fontWeight: 600 }}>{label}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">{desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px bg-gray-100" />
-                <span className="text-[11px] text-gray-400" style={{ fontWeight: 500 }}>atau</span>
-                <div className="flex-1 h-px bg-gray-100" />
-              </div>
-
-              {/* Manual login fallback */}
-              <button type="button" onClick={() => setShowManual(true)}
-                className="w-full py-3 text-sm text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-700 transition-all"
-                style={{ fontWeight: 500 }}>
-                Masuk dengan Email &amp; Password
-              </button>
-
-              <p className="text-[11px] text-gray-400 text-center mt-auto pt-5 leading-relaxed">
-                Akses dashboard LPPM untuk mengelola penelitian, pengabdian masyarakat, dan publikasi ilmiah Universitas Pradita.
-              </p>
-            </>
-          ) : (
             /* ── Manual Login Form ── */
             <>
               <div className="mb-5">
-                <button type="button" onClick={() => setShowManual(false)}
-                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-4 transition-colors">
-                  <ArrowLeft className="w-4 h-4" /> Kembali ke pilih role
-                </button>
                 <h2 className="text-2xl text-gray-900 mb-1" style={{ fontWeight: 700 }}>Masuk Akun</h2>
                 <p className="text-sm text-gray-400">Masukkan email dan password Anda</p>
               </div>
@@ -193,7 +118,6 @@ export function LoginPage() {
                 </div>
               </form>
             </>
-          )}
         </div>
 
         {/* Right Side - Image */}

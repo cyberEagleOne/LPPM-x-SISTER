@@ -261,13 +261,13 @@ export function Dashboard() {
                   Profil Dosen
                 </p>
                 <h2 className="mt-2 text-2xl text-slate-900" style={{ fontWeight: 700 }}>
-                  {dosenProfile.nama}
+                  {user?.name || dosenProfile.nama}
                 </h2>
               </div>
 
               <div className="grid gap-6 px-6 py-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-start">
                 <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-[#E30613] text-3xl text-white shadow-sm">
-                  {user.name.charAt(0)}
+                  {user?.name?.charAt(0) || "U"}
                 </div>
 
                 <div className="space-y-4">
@@ -717,7 +717,7 @@ export function Dashboard() {
   }
 
   return (
-    <PageWrapper title={`${greeting()}, ${user.name.split(" ")[0]}!`} subtitle="Berikut ringkasan aktivitas LPPM Anda hari ini.">
+    <PageWrapper title={`${greeting()}, ${user?.name?.split(" ")[0] || "Pengguna"}!`} subtitle="Berikut ringkasan aktivitas Anda hari ini.">
       {/* Stat Cards */}
       <div className={`grid gap-4 ${stats.length > 4 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"}`}>
         {loading

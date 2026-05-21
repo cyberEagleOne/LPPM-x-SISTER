@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import {
-  Plus, Search, Eye, Edit, Trash2, Send, FileText, ClipboardList,
+  Plus, Search, Eye, Edit, Trash2, FileText, ClipboardList,
   Award, HelpCircle, AlertTriangle, ChevronLeft, ChevronRight,
-  CheckCircle, X, Calendar, Info, ExternalLink, Clock
+  CheckCircle, X, Calendar, Info
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { PageWrapper } from "../components/PageWrapper";
@@ -12,6 +12,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { SkeletonTable } from "../components/SkeletonLoader";
 import { useAuth } from "../context/AuthContext";
 import { SuperAdminPkmPage } from "./SuperAdminPkmPage";
+import type { DetailPenelitian } from "../../../../../shared/models/Penelitian/DetailPenelitian";
 
 /* ────────────────── Types ────────────────── */
 
@@ -40,8 +41,9 @@ interface PeriodeAjuan {
   tgl_hasilevaluasi: string;
 }
 
-export interface HibahItem {
+export interface HibahItem extends Partial<Omit<DetailPenelitian, "status">> {
   id: string;
+  dosen_id?: string;
   judul: string;
   pengusul: string;
   skema: string;
@@ -84,38 +86,37 @@ const MOCK_PERIODE: PeriodeAjuan = {
 
 const MOCK_HIBAH: HibahItem[] = [
   {
-    id: "HIB-001", judul: "Penelitian IoT untuk Smart Campus Pradita", pengusul: "Dr. Arif Ramadhan, M.Sc.",
+    id: "HIB-001", dosen_id: "USR-001", judul: "Penelitian IoT untuk Smart Campus Pradita", pengusul: "Dr. Arif Ramadhan, M.Sc.",
     skema: "Penelitian Dasar", jenis: "penelitian", tahun: "2025/2026", periode: "Genap",
     dana: 25000000, status: "submitted", tanggal: "2026-02-20", reviewselesai: false, bolehpengumuman: false, isPkm: false, hutangLuaran: false,
   },
   {
-    id: "HIB-002", judul: "Pengembangan AI Chatbot untuk Layanan Akademik", pengusul: "Dr. Rina Wulandari",
+    id: "HIB-002", dosen_id: "USR-002", judul: "Pengembangan AI Chatbot untuk Layanan Akademik", pengusul: "Dr. Rina Wulandari",
     skema: "Penelitian Terapan", jenis: "penelitian", tahun: "2025/2026", periode: "Genap",
     dana: 35000000, status: "approved", tanggal: "2026-02-18", reviewselesai: true, bolehpengumuman: false, isPkm: false, hutangLuaran: false,
   },
   {
-    id: "HIB-003", judul: "Studi Komparatif Green Building di Indonesia", pengusul: "Prof. Dimas Prakoso",
+    id: "HIB-003", dosen_id: "USR-003", judul: "Studi Komparatif Green Building di Indonesia", pengusul: "Prof. Dimas Prakoso",
     skema: "Penelitian Dasar", jenis: "penelitian", tahun: "2025/2026", periode: "Genap",
     dana: 20000000, status: "revisi", tanggal: "2026-02-15", reviewselesai: true, bolehpengumuman: false, isPkm: false, hutangLuaran: false,
   },
   {
-    id: "HIB-004", judul: "Machine Learning untuk Prediksi Cuaca Lokal", pengusul: "Dr. Lestari Handayani",
+    id: "HIB-004", dosen_id: "USR-001", judul: "Machine Learning untuk Prediksi Cuaca Lokal", pengusul: "Dr. Lestari Handayani",
     skema: "Penelitian Terapan", jenis: "penelitian", tahun: "2025/2026", periode: "Genap",
     dana: 40000000, status: "draft", tanggal: null, reviewselesai: false, bolehpengumuman: false, isPkm: false, hutangLuaran: false,
   },
   {
-    id: "HIB-005", judul: "Pengabdian Masyarakat Desa Digital - PKM", pengusul: "Dr. Fajar Nugroho",
+    id: "HIB-005", dosen_id: "USR-002", judul: "Pengabdian Masyarakat Desa Digital - PKM", pengusul: "Dr. Fajar Nugroho",
     skema: "Pengabdian Masyarakat", jenis: "pengabdian", tahun: "2025/2026", periode: "Genap",
     dana: 15000000, status: "approved", tanggal: "2026-02-12", reviewselesai: true, bolehpengumuman: true, isPkm: true, hutangLuaran: false,
   },
   {
-    id: "HIB-006", judul: "Analisis Sentimen Media Sosial untuk Brand", pengusul: "Dr. Dewi Lestari",
+    id: "HIB-006", dosen_id: "USR-003", judul: "Analisis Sentimen Media Sosial untuk Brand", pengusul: "Dr. Dewi Lestari",
     skema: "Penelitian Terapan", jenis: "penelitian", tahun: "2024/2025", periode: "Ganjil",
     dana: 30000000, status: "verified", tanggal: "2025-12-10", reviewselesai: true, bolehpengumuman: false, isPkm: false, hutangLuaran: false,
   },
 ];
 
-const formatCurrency = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
 const formatDate = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
 /* ────────────────── Tanggal Penting Modal ────────────────── */
@@ -208,9 +209,12 @@ export function HibahInternalPage({ jenis = "penelitian" }: { jenis?: JenisHibah
   };
 
   const filtered = data.filter((d) => {
+    // Validasi Keamanan Level Sesi: Hanya Admin dan Reviewer yang boleh melihat proposal milik orang lain.
+    const isOwner = (user?.role === "administrator" || user?.role === "reviewer") ? true : d.dosen_id === user?.id;
+
     const matchJenis = jenis === "pengabdian" ? d.jenis === "pengabdian" : d.jenis === "penelitian";
     const matchSearch = d.judul.toLowerCase().includes(searchQuery.toLowerCase()) || d.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchJenis && matchSearch;
+    return isOwner && matchJenis && matchSearch;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));

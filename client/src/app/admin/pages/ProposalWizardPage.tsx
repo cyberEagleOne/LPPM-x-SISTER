@@ -84,7 +84,7 @@ export function ProposalWizardPage({ onBack }: { onBack: () => void }) {
   });
 
   // Step 4: RAB
-  const [rabItems, setRabItems] = useState<RABItem[]>([
+  const [rabItems] = useState<RABItem[]>([
     { id: "R1", komponen: "Bahan Habis Pakai", volume: 1, satuan: "paket", hargaSatuan: 5000000, total: 5000000 },
     { id: "R2", komponen: "Perjalanan Dinas", volume: 2, satuan: "kali", hargaSatuan: 3000000, total: 6000000 },
     { id: "R3", komponen: "Sewa Peralatan", volume: 1, satuan: "unit", hargaSatuan: 4000000, total: 4000000 },
@@ -143,6 +143,19 @@ export function ProposalWizardPage({ onBack }: { onBack: () => void }) {
   };
 
   const handleFinalSubmit = () => {
+    // [SECURITY] Merakit seluruh wizard data dan mengunci ID pengusul menggunakan sesi
+    const securePayload = {
+      dosen_id: user?.id, 
+      basicInfo,
+      teamMembers,
+      courseData,
+      rabItems,
+      isDraft: !allMembersApproved
+    };
+    
+    // Simulasi payload untuk API submit
+    console.log("Submitting secure wizard payload:", securePayload);
+
     setConfirmModal({
       isOpen: true,
       title: "Submit Proposal?",
@@ -150,7 +163,10 @@ export function ProposalWizardPage({ onBack }: { onBack: () => void }) {
         ? "Proposal akan di-submit untuk review. Pastikan semua data sudah benar."
         : "Beberapa anggota tim belum approve. Proposal akan disimpan sebagai draft.",
       variant: allMembersApproved ? "success" : "warning",
-      onConfirm: () => onBack(),
+      onConfirm: () => {
+        // Eksekusi API call pengiriman form sebenarnya (menggunakan securePayload) diletakkan di sini
+        onBack();
+      },
     });
   };
 

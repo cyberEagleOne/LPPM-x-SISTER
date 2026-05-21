@@ -306,7 +306,9 @@ export function DosenKegiatanPage({ jenisParam = "penelitian" }: { jenisParam?: 
   };
 
   const periodeFiltered = kegiatanList.filter((item) =>
-    item.periodeId === selectedPeriode?.id && (jenisParam === "penelitian")
+    item.periodeId === selectedPeriode?.id && 
+    (jenisParam === "penelitian") &&
+    item.id_users === user?.id
   );
   const filtered = periodeFiltered.filter((item) =>
     [item.judul, item.lokasi, item.jenis_skim, item.kelompok_bidang].some((value) =>

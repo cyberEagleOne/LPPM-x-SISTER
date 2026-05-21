@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Plus, Search, Eye, Edit, Trash2, Send, FileText, CheckCircle,
-  ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Download, BookOpen, 
+  ChevronLeft, ChevronRight, RotateCcw, Download, BookOpen, 
   AlertCircle, ExternalLink, RefreshCw, Calendar, Clock, Info, X
 } from "lucide-react";
 import { PageWrapper } from "../../components/PageWrapper";
@@ -22,7 +22,6 @@ import type {
 } from "../../../../../../shared/models";
 
 /* ────────────────── Types ────────────────── */
-
 type ViewMode = "periode" | "list" | "form" | "detail";
 
 /* ────────────────── Constants ────────────────── */
@@ -229,36 +228,10 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
   const formRef = useRef<HTMLDivElement>(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "danger" as "danger" | "warning" | "success", onConfirm: () => {} });
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing] = useState(false);
   const [deadlinePopup, setDeadlinePopup] = useState<PeriodePublikasi | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const perPage = 8;
-
-  const handleSync = async () => {
-    try {
-      setIsSyncing(true);
-      
-      // for now
-      const response = await fetch(`http://localhost:3000/api/sdm/publikasi/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_user: user?.id }) 
-      });
-      
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        showToast("Sinkronisasi SISTER berhasil", "success");
-        await fetchPublikasi(); 
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error: any) {
-      showToast(error.message || "Gagal melakukan sinkronisasi", "error");
-    } finally {
-      setIsSyncing(false); 
-    }
-  };
 
   const emptyForm = (): Omit<PublikasiItem, "id" | "tanggalDibuat" | "status"> => ({
     periodeId: selectedPeriode?.id || "",
@@ -798,7 +771,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
               
               {selectedItem.riwayat && selectedItem.riwayat.length > 0 ? (
                 <div className="relative border-l-2 border-slate-100 ml-2 space-y-6 pb-2 mt-2">
-                  {selectedItem.riwayat.map((item, index) => {
+                  {selectedItem.riwayat.map((item) => {
                     const dotColor = 
                       item.status.toLowerCase() === 'approved' ? 'bg-green-500' : 
                       item.status.toLowerCase() === 'revisi' ? 'bg-amber-500' : 
@@ -870,7 +843,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                   required error={formErrors.nama_jurnal}>
                     <input 
                     type="text" 
-                    value={formData.nama_jurnal} 
+                    value={formData.nama_jurnal ?? ""} 
                     onChange={(e) => setFormData((p) => ({ ...p, nama_jurnal: e.target.value }))} 
                     className={inputClass(!!formErrors.nama_jurnal)} />
                   </FormField>
@@ -886,7 +859,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                         setFormData((p) => ({ 
                           ...p, 
                           kategori_kegiatan: selectedLabel,
-                          id_kategori_kegiatan: selectedObj ? selectedObj.id : ""
+                          id_kategori_kegiatan: selectedObj ? selectedObj.id : undefined
                         }));
                       }}
                       placeholder="Cari kategori kegiatan..."
@@ -904,7 +877,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     setFormData((p) => ({ 
                       ...p, 
                       kategori_capaian_luaran: selectedLabel.target.value,
-                      id_kategori_capaian_luaran: selectedObj ? selectedObj.id : ""
+                      id_kategori_capaian_luaran: selectedObj ? selectedObj.id : undefined
                     }));
                   }}
                   className={inputClass()}
@@ -925,7 +898,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     setFormData((p) => ({ 
                       ...p, 
                       jenis_publikasi: selectedLabel.target.value,
-                      id_jenis_publikasi: selectedObj ? selectedObj.id : ""
+                      id_jenis_publikasi: selectedObj ? selectedObj.id : undefined
                     }));
                   }}
                   className={inputClass()}
@@ -996,7 +969,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     required error={formErrors.halaman}>
                       <input 
                       type="text" 
-                      value={formData.halaman} 
+                      value={formData.halaman ?? ""} 
                       onChange={(e) => setFormData((p) => ({ ...p, halaman: e.target.value }))} 
                       className={inputClass(!!formErrors.halaman)} />
                     </FormField>
@@ -1004,7 +977,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     required error={formErrors.edisi}>
                       <input 
                       type="text" 
-                      value={formData.edisi} 
+                      value={formData.edisi ?? ""} 
                       onChange={(e) => setFormData((p) => ({ ...p, edisi: e.target.value }))} 
                       className={inputClass(!!formErrors.edisi)} />
                     </FormField>
@@ -1015,7 +988,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       <input 
                       type="number" 
                       min= "0"
-                      value={formData.volume} 
+                      value={formData.volume ?? ""} 
                       onChange={(e) => setFormData((p) => ({ ...p, volume: parseInt(e.target.value) }))} 
                       className={inputClass(!!formErrors.volume)} />
                     </FormField>
@@ -1024,7 +997,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       <input 
                       type="number"
                       min= "0" 
-                      value={formData.nomor} 
+                      value={formData.nomor ?? ""} 
                       onChange={(e) => setFormData((p) => ({ ...p, nomor: parseInt(e.target.value) }))} 
                       className={inputClass(!!formErrors.nomor)} />
                     </FormField>
@@ -1067,7 +1040,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       </div>
                       {formData.penulisDosen.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada dosen lain yang ditambahkan.</p>}
                       
-                      {formData.penulisDosen.map((item, index) => (
+                      {formData.penulisDosen.map((item) => (
                         <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
                           <div className="sm:col-span-4"><input type="text" placeholder="Nama Dosen" value={item.nama} onChange={(e) => handleUpdatePenulis("dosen", item.id, "nama", e.target.value)} className={inputClass()} /></div>
                           <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi (Contoh: Univ. A)" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("dosen", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
@@ -1087,7 +1060,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                       </div>
                       {formData.penulisMahasiswa.length === 0 && <p className="text-xs text-slate-400 italic">Tidak ada mahasiswa yang ditambahkan.</p>}
                       
-                      {formData.penulisMahasiswa.map((item, index) => (
+                      {formData.penulisMahasiswa.map((item) => (
                         <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
                           <div className="sm:col-span-4"><input type="text" placeholder="Nama Mahasiswa" value={item.nama} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "nama", e.target.value)} className={inputClass()} /></div>
                           <div className="sm:col-span-5"><input type="text" placeholder="Afiliasi / NIM" value={item.afiliasi} onChange={(e) => handleUpdatePenulis("mahasiswa", item.id, "afiliasi", e.target.value)} className={inputClass()} /></div>
@@ -1110,7 +1083,7 @@ export function DosenPublikasiPage({ jenisParam }: { jenisParam?: JenisPublikasi
                     setFormData((p) => ({ 
                       ...p, 
                       jenis_publikasi: selectedLabel.target.value,
-                      id_jenis_publikasi: selectedObj ? selectedObj.id : ""
+                      id_jenis_publikasi: selectedObj ? selectedObj.id : undefined
                     }));
                   }}
                     className={inputClass()}>

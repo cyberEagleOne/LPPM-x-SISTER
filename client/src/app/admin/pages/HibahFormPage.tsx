@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
-  ChevronLeft, AlertCircle, RotateCcw, Send, FileText
+  ChevronLeft, AlertCircle, RotateCcw, Send
 } from "lucide-react";
 import { useNavigate, useSearchParams, useParams } from "react-router";
 import { PageWrapper } from "../components/PageWrapper";
+import { useAuth } from "../context/AuthContext";
 
 /* ────────────────── Types ────────────────── */
 
@@ -138,6 +139,7 @@ function FormField({ label, required, error, helper, children }: { label: string
 
 export function HibahFormPage({ mode = "new" }: { mode?: "new" | "edit" }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const { id: encryptedId } = useParams();
   const jenisParam = (searchParams.get("jenis") || "penelitian") as JenisHibah;
@@ -223,6 +225,16 @@ export function HibahFormPage({ mode = "new" }: { mode?: "new" | "edit" }) {
 
   const handleSubmit = () => {
     if (!validate()) return;
+    
+    // [SECURITY] Mengunci payload dengan user.id sesi yang aktif (bukan input form)
+    const securePayload = {
+      ...form,
+      dosen_id: user?.id, // ID Dosen Pengusul otomatis disuntikkan
+    };
+    
+    // Simulasi Pengiriman ke API (contoh: await fetch('/api/hibah', ...))
+    console.log("Submitting secure payload:", securePayload);
+
     alert(`${mode === "new" ? "Proposal berhasil diajukan" : "Proposal berhasil diupdate"}!`);
     navigate("/admin/hibah/penelitian");
   };

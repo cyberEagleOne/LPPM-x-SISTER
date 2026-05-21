@@ -1,105 +1,9 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router";
 import { ChevronRight, BookOpen, FileText, Award, ExternalLink, GraduationCap } from "lucide-react";
+import type { Publikasi } from "../../../../shared/models/Publikasi/Publikasi";
 
 const publikasiContent: Record<string, { title: string; content: React.ReactNode }> = {
-  jurnal: {
-    title: "Jurnal",
-    content: (
-      <div className="space-y-6 text-sm text-gray-600">
-        <p>Universitas Pradita mendorong publikasi ilmiah di jurnal nasional terakreditasi dan jurnal internasional bereputasi.</p>
-        <h4 className="text-gray-800">Jurnal Terkelola LPPM</h4>
-        <div className="space-y-4 mt-3">
-          {[
-            { name: "Jurnal Pradita Teknika", issn: "ISSN: 2XXX-XXXX", scope: "Teknik & Informatika", status: "SINTA 4" },
-            { name: "Jurnal Pradita Bisnis", issn: "ISSN: 2XXX-XXXX", scope: "Bisnis & Manajemen", status: "SINTA 5" },
-            { name: "Jurnal Pradita Desain", issn: "ISSN: 2XXX-XXXX", scope: "Desain & Arsitektur", status: "Dalam Pengajuan" },
-          ].map((item) => (
-            <div key={item.name} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-gray-800 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-[#E30613]" />
-                    {item.name}
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1">{item.issn} | {item.scope}</p>
-                </div>
-                <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">{item.status}</span>
-              </div>
-              <button className="mt-3 text-xs text-[#E30613] hover:underline flex items-center gap-1">
-                Kunjungi Jurnal <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <h4 className="text-gray-800 mt-6">Target Publikasi Jurnal 2025</h4>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="bg-blue-50 rounded-xl p-4 text-center">
-            <div className="text-2xl text-blue-700" style={{ fontWeight: 700 }}>25</div>
-            <div className="text-xs text-blue-600 mt-1">Scopus Q1-Q2</div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4 text-center">
-            <div className="text-2xl text-green-700" style={{ fontWeight: 700 }}>50</div>
-            <div className="text-xs text-green-600 mt-1">SINTA 1-4</div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  prosiding: {
-    title: "Prosiding",
-    content: (
-      <div className="space-y-6 text-sm text-gray-600">
-        <p>Prosiding dari konferensi dan seminar yang diikuti atau diselenggarakan oleh civitas akademika Universitas Pradita.</p>
-        <div className="space-y-4">
-          {[
-            { name: "Prosiding Seminar Nasional Riset dan Inovasi 2024", date: "Juni 2024", papers: 45 },
-            { name: "Proceedings of International Conference on Smart Computing 2024", date: "Mei 2024", papers: 32 },
-            { name: "Prosiding Workshop Pengabdian Masyarakat 2024", date: "April 2024", papers: 28 },
-            { name: "Proceedings of IEEE Conference on Technology 2023", date: "November 2023", papers: 15 },
-          ].map((item) => (
-            <div key={item.name} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-[#E30613] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-gray-800">{item.name}</h4>
-                  <div className="flex gap-3 mt-2">
-                    <span className="text-xs text-gray-500">{item.date}</span>
-                    <span className="text-xs text-gray-500">{item.papers} papers</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-  },
-  buku: {
-    title: "Buku",
-    content: (
-      <div className="space-y-6 text-sm text-gray-600">
-        <p>Buku-buku yang ditulis oleh dosen Universitas Pradita sebagai bagian dari kontribusi ilmiah dan akademik.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { title: "Pengantar Kecerdasan Buatan", author: "Dr. Arif Ramadhan", year: "2024", isbn: "978-XXX-XXX" },
-            { title: "Manajemen Proyek Konstruksi Modern", author: "Dr. Ahmad Surya", year: "2023", isbn: "978-XXX-XXX" },
-            { title: "Desain Interaksi untuk Pengalaman Pengguna", author: "Dr. Dewi Kartika", year: "2023", isbn: "978-XXX-XXX" },
-            { title: "Statistika Terapan untuk Penelitian", author: "Dr. Siti Nurhaliza", year: "2022", isbn: "978-XXX-XXX" },
-          ].map((item) => (
-            <div key={item.title} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-              <BookOpen className="w-8 h-8 text-[#E30613] mb-3" />
-              <h4 className="text-gray-800">{item.title}</h4>
-              <p className="text-xs text-gray-500 mt-1">{item.author}</p>
-              <div className="flex gap-3 mt-2">
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.year}</span>
-                <span className="text-xs text-gray-400">{item.isbn}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-  },
   sinta: {
     title: "Sinta",
     content: (
@@ -212,7 +116,89 @@ const sidebarItems = [
 
 export function PublikasiPage() {
   const { section = "buku" } = useParams();
-  const content = publikasiContent[section] || publikasiContent.buku;
+  
+  const [publikasiList, setPublikasiList] = useState<Publikasi[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (["buku", "jurnal", "prosiding"].includes(section)) {
+      setIsLoading(true);
+      setTimeout(() => {
+        const mockData: Publikasi[] = [
+          {
+            id: "pub-1",
+            judul: "Implementasi AI pada Sektor Pertanian Modern",
+            jenis_publikasi: section === "jurnal" ? "Jurnal Nasional Terakreditasi" : "Buku Referensi",
+            kategori_kegiatan: "Penelitian Terapan",
+            quartile: section === "jurnal" ? 2 : null,
+            tanggal: "2024-05-12",
+            asal_data: "SISTER",
+            id_user: "dosen-123",
+          },
+          {
+            id: "pub-2",
+            judul: "Analisis Sentimen Pengguna Menggunakan NLP",
+            jenis_publikasi: section === "jurnal" ? "Jurnal Internasional" : "Prosiding Konferensi",
+            kategori_kegiatan: "Penelitian Dasar",
+            quartile: section === "jurnal" ? 1 : null,
+            tanggal: "2025-01-20",
+            asal_data: "Manual",
+            id_user: "dosen-456",
+          }
+        ];
+        setPublikasiList(mockData);
+        setIsLoading(false);
+      }, 800);
+    }
+  }, [section]);
+
+  const renderDynamicPublikasi = () => {
+    if (isLoading) return <div className="animate-pulse p-4 text-gray-500">Memuat data publikasi...</div>;
+
+    return (
+      <div className="space-y-6 text-sm text-gray-600">
+        <p className="leading-relaxed">
+          Berikut adalah daftar {section} karya sivitas akademika Universitas Pradita (Data ditarik dari sistem terpadu).
+        </p>
+        <div className="space-y-4">
+          {publikasiList.map((item) => (
+            <div key={item.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-3">
+                <BookOpen className="w-5 h-5 text-[#E30613] shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-gray-800 font-semibold">{item.judul}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{item.kategori_kegiatan}</p>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                      {item.jenis_publikasi}
+                    </span>
+                    {item.quartile && (
+                      <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-100">
+                        Q{item.quartile}
+                      </span>
+                    )}
+                    <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                      📅 {item.tanggal}
+                    </span>
+                    <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+                      Sumber: {item.asal_data}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {publikasiList.length === 0 && <p className="text-gray-500">Belum ada data publikasi untuk kategori ini.</p>}
+        </div>
+      </div>
+    );
+  };
+
+  const isDynamic = ["buku", "jurnal", "prosiding"].includes(section);
+  
+  const displayContent = isDynamic 
+    ? { title: section.charAt(0).toUpperCase() + section.slice(1), content: renderDynamicPublikasi() }
+    : publikasiContent[section] || { title: "Publikasi", content: null };
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -223,9 +209,9 @@ export function PublikasiPage() {
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-gray-700">Publikasi</span>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span style={{ color: '#E30613' }}>{content.title}</span>
+            <span style={{ color: '#E30613' }}>{displayContent.title}</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{content.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{displayContent.title}</h1>
         </div>
       </section>
 
@@ -260,7 +246,7 @@ export function PublikasiPage() {
               </nav>
             </aside>
             <div className="flex-1 min-w-0 bg-white rounded-xl p-6 md:p-8" style={{ border: '1px solid #dee2e6' }}>
-              {content.content}
+              {displayContent.content}
             </div>
           </div>
         </div>

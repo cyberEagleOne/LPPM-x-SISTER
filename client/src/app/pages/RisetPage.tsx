@@ -1,39 +1,9 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router";
 import { ChevronRight, FlaskConical, Handshake, Award, BookOpenCheck } from "lucide-react";
+import type { Penelitian } from "../../../../shared/models";
 
 const risetContent: Record<string, { title: string; content: React.ReactNode }> = {
-  penelitian: {
-    title: "Penelitian",
-    content: (
-      <div className="space-y-6 text-sm text-gray-600">
-        <p className="leading-relaxed">
-          LPPM Universitas Pradita mendukung kegiatan penelitian dosen melalui berbagai skema pendanaan dan fasilitas riset yang komprehensif.
-        </p>
-        <div className="space-y-4">
-          {[
-            { name: "Penelitian Dasar", desc: "Penelitian fundamental untuk pengembangan ilmu pengetahuan baru", funding: "Rp 30 – 100 Juta", duration: "1–2 Tahun" },
-            { name: "Penelitian Terapan", desc: "Penelitian yang menghasilkan solusi praktis untuk permasalahan industri dan masyarakat", funding: "Rp 50 – 150 Juta", duration: "1–3 Tahun" },
-            { name: "Penelitian Pengembangan", desc: "Pengembangan produk, prototype, atau teknologi baru", funding: "Rp 75 – 200 Juta", duration: "2–3 Tahun" },
-            { name: "Penelitian Dosen Pemula", desc: "Skema khusus untuk dosen dengan jabatan fungsional asisten ahli", funding: "Rp 15 – 30 Juta", duration: "1 Tahun" },
-            { name: "Penelitian Kolaborasi", desc: "Penelitian interdisipliner yang melibatkan lebih dari satu program studi", funding: "Rp 100 – 300 Juta", duration: "1–3 Tahun" },
-          ].map((item) => (
-            <div key={item.name} className="bg-white rounded-xl p-5 hover:shadow-md transition-shadow" style={{ border: '1px solid #dee2e6' }}>
-              <h4 className="text-gray-800 font-semibold">{item.name}</h4>
-              <p className="text-gray-500 mt-1">{item.desc}</p>
-              <div className="flex flex-wrap gap-3 mt-3">
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(40,167,69,0.1)', color: '#28a745' }}>
-                  💰 {item.funding}
-                </span>
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(0,123,255,0.1)', color: '#007bff' }}>
-                  ⏱ {item.duration}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-  },
   pengabdian: {
     title: "Pengabdian",
     content: (
@@ -152,7 +122,67 @@ const sidebarItems = [
 
 export function RisetPage() {
   const { section = "penelitian" } = useParams();
-  const content = risetContent[section] || risetContent.penelitian;
+  
+  const [penelitianList, setPenelitianList] = useState<Penelitian[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (section === "penelitian") {
+      setIsLoading(true);
+      setTimeout(() => {
+        const mockData: Penelitian[] = [
+          {
+            id: "p1",
+            judul: "Pengembangan Model AI untuk Prediksi Hasil Panen",
+            tahun_pelaksanaan: 2024,
+            lama_kegiatan: 2,
+            id_users: "dosen-123",
+          },
+          {
+            id: "p2",
+            judul: "Sistem Informasi Manajemen Terpadu Smart Campus",
+            tahun_pelaksanaan: 2025,
+            lama_kegiatan: 1,
+            id_users: "dosen-456",
+          }
+        ];
+        setPenelitianList(mockData);
+        setIsLoading(false);
+      }, 800);
+    }
+  }, [section]);
+
+  const renderPenelitian = () => {
+    if (isLoading) return <div className="animate-pulse p-4">Memuat data penelitian...</div>;
+    
+    return (
+      <div className="space-y-6 text-sm text-gray-600">
+        <p className="leading-relaxed">
+          Berikut adalah daftar penelitian berjalan yang didukung oleh LPPM Universitas Pradita.
+        </p>
+        <div className="space-y-4">
+          {penelitianList.map((item) => (
+            <div key={item.id} className="bg-white rounded-xl p-5 hover:shadow-md transition-shadow" style={{ border: '1px solid #dee2e6' }}>
+              <h4 className="text-gray-800 font-semibold">{item.judul || 'Tanpa Judul'}</h4>
+              <div className="flex flex-wrap gap-3 mt-3">
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(0,123,255,0.1)', color: '#007bff' }}>
+                  📅 Tahun: {item.tahun_pelaksanaan}
+                </span>
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(40,167,69,0.1)', color: '#28a745' }}>
+                  ⏱ Lama Kegiatan: {item.lama_kegiatan} Tahun
+                </span>
+              </div>
+            </div>
+          ))}
+          {penelitianList.length === 0 && <p>Belum ada data penelitian.</p>}
+        </div>
+      </div>
+    );
+  };
+
+  const displayContent = section === "penelitian" 
+    ? { title: "Penelitian", content: renderPenelitian() }
+    : risetContent[section] || risetContent.pengabdian;
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -163,9 +193,9 @@ export function RisetPage() {
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-gray-700">Riset</span>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span style={{ color: '#E30613' }}>{content.title}</span>
+            <span style={{ color: '#E30613' }}>{displayContent.title}</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{content.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{displayContent.title}</h1>
         </div>
       </section>
 
@@ -200,7 +230,7 @@ export function RisetPage() {
               </nav>
             </aside>
             <div className="flex-1 min-w-0 bg-white rounded-xl p-6 md:p-8" style={{ border: '1px solid #dee2e6' }}>
-              {content.content}
+              {displayContent.content}
             </div>
           </div>
         </div>

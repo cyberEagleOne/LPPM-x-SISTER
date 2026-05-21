@@ -11,7 +11,7 @@ export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"info" | "password">("info");
   const [showOldPw, setShowOldPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "success" as const, onConfirm: () => {} });
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", variant: "success" as "success" | "warning" | "danger", onConfirm: () => {} });
   const [pwData, setPwData] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -208,7 +208,7 @@ export function ProfilePage() {
           <span className="text-sm" style={{ fontWeight: 500 }}>{activeTab === "info" ? "Profile berhasil diperbarui" : "Password berhasil diganti"}</span>
         </div>
       )}
-      <ConfirmModal {...confirmModal} onClose={() => setConfirmModal((p) => ({ ...p, open: false }))} />
+      <ConfirmModal isOpen={confirmModal.open} {...confirmModal} onClose={() => setConfirmModal((p) => ({ ...p, open: false }))} />
     </PageWrapper>
   );
 }

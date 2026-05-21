@@ -11,6 +11,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { SkeletonTable } from "../components/SkeletonLoader";
 import { StepperStatus } from "../components/StepperStatus";
+import { useAuth } from "../context/AuthContext";
 
 /* ────────────────── Types ────────────────── */
 
@@ -40,6 +41,7 @@ interface KonferensiItem {
   urlOrisinalitas: string;
   status: StatusType;
   tanggalDibuat: string;
+  id_users?: string;
 }
 
 type ViewMode = "periode" | "list" | "form" | "detail";
@@ -104,6 +106,7 @@ const emptyForm = (): Omit<KonferensiItem, "id" | "tanggalDibuat" | "status"> =>
 /* ────────────────── Main Component ────────────────── */
 
 export function DosenKonferensiPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("periode");
   const [selectedPeriode, setSelectedPeriode] = useState<PeriodeKonf | null>(null);
@@ -178,6 +181,7 @@ export function DosenKonferensiPage() {
       const newItem: KonferensiItem = {
         ...formData,
         id: generateId(),
+        id_users: user?.id,
         status: asSubmit ? "submitted" : "draft",
         tanggalDibuat: new Date().toISOString().split("T")[0],
       };
@@ -200,7 +204,8 @@ export function DosenKonferensiPage() {
   };
 
   const periodeFiltered = konferensiList.filter((k) =>
-    selectedPeriode ? k.tahun === selectedPeriode.tahun && k.semester === selectedPeriode.semester : false
+    (selectedPeriode ? k.tahun === selectedPeriode.tahun && k.semester === selectedPeriode.semester : false) &&
+    (k.id_users === user?.id || !k.id_users)
   );
   const filtered = periodeFiltered.filter((k) =>
     k.judulKonferensi.toLowerCase().includes(searchQuery.toLowerCase())
