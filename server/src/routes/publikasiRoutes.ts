@@ -9,6 +9,7 @@ router.get('/publikasi', PublikasiController.getListPublikasi);
 router.post('/publikasi', PublikasiController.createPublikasi);
 router.put('/publikasi/:id', PublikasiController.updatePublikasi);
 router.delete('/publikasi/:id', PublikasiController.deletePublikasi);
+router.get('/publikasi/:id/riwayat', PublikasiController.getRiwayatPublikasi);
 
 //ROUTE SISTER
 router.get('/publikasi/sister', PublikasiController.getSisterPublikasi);

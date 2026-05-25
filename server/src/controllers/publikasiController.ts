@@ -245,6 +245,42 @@ export class PublikasiController {
             });
         }
     }
+
+    // --- Fungsi Lihat Riwayat (GET) ---
+    static async getRiwayatPublikasi(req: Request, res: Response) {
+        try {
+            const idPublikasi = req.params.id;
+
+            if (!idPublikasi) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'ID Publikasi diperlukan.'
+                });
+            }
+
+            const riwayat = await prisma.publikasi_riwayat.findMany({
+                where: {
+                    id_publikasi: idPublikasi as string
+                },
+                orderBy: {
+                    tanggal: 'desc'
+                }
+            });
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Berhasil mengambil riwayat publikasi',
+                data: riwayat
+            });
+
+        } catch (error: any) {
+            console.error("Error getRiwayatPublikasi:", error);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Gagal mengambil riwayat publikasi'
+            });
+        }
+    }
     // --- Fungsi Tambah Data (POST) ---
     static async createPublikasi(req: Request, res: Response) {
         try {
