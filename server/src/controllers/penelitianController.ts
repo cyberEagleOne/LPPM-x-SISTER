@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../config/database";
+import type { Penelitian } from '../../../shared/models';
 
 const toNumberOrNull = (value: unknown) => {
   if (value === "" || value === null || value === undefined) return null;
@@ -13,7 +14,7 @@ const toDecimalOrNull = (value: unknown) => {
   return String(value);
 };
 
-const formatPenelitian = (item: any) => {
+const formatPenelitian = (item: any): Penelitian & { tanggalDibuat: any; status: string } => {
   const detail = item.detail_penelitian;
 
   return {

@@ -553,8 +553,7 @@ export class syncToDB {
                       seminar: detail.seminar ? true : false,
                       prosiding: detail.prosiding ? true : false,
                       asal_data: detail.asal_data || pub.asal_data || null,
-                      status: 'approved',
-                      komentar: '-'
+                      status: 'approved'
                     },
                     create: {
                       id: idPublikasi,
@@ -589,8 +588,7 @@ export class syncToDB {
                       seminar: detail.seminar ? true : false,
                       prosiding: detail.prosiding ? true : false,
                       asal_data: detail.asal_data || pub.asal_data || null,
-                      status: 'approved',
-                      komentar: '-'
+                      status: 'approved'
                     }
                   });
 

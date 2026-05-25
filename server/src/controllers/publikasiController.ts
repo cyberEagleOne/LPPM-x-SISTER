@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from '../config/database';
 import { v4 as uuidv4 } from "uuid";
 import { syncToDB } from "../services/syncToDb";
-import type { PeriodePublikasi } from '../../../shared/models'
+import type { PeriodePublikasi, Publikasi } from '../../../shared/models'
 
 export class PublikasiController {
     private static formatDate(value: Date | string | null | undefined) {
@@ -182,7 +182,11 @@ export class PublikasiController {
                     detail_publikasi: {
                         include: {
                             publikasi_penulis: true,
-                            publikasi_dokumen: true
+                            publikasi_dokumen: true,
+                            publikasi_riwayat: {
+                                orderBy: { tanggal: 'desc' },
+                                take: 1
+                            }
                         }
                     }
                 }
@@ -196,16 +200,17 @@ export class PublikasiController {
                 });
             }
 
-            const formattedData = publikasi.map((p) => {
+            const formattedData = publikasi.map((p): Publikasi & Record<string, any> => {
                 const detail = p.detail_publikasi;
 
                 return {
                     ...p,
                     // prefer detail fields when available
-                    judul: detail?.judul || p.judul,
+                    judul: detail?.judul || p.judul || "",
                     quartile: detail?.quartile ?? p.quartile,
-                    jenis_publikasi: detail?.jenis_publikasi || p.jenis_publikasi,
-                    tanggal: detail?.tanggal || p.tanggal,
+                    jenis_publikasi: detail?.jenis_publikasi || p.jenis_publikasi || "",
+                    tanggal: detail?.tanggal || p.tanggal || "",
+                    asal_data: p.asal_data || "",
                     penerbit: detail?.penerbit || null,
                     isbn: detail?.isbn || null,
                     status: detail?.status || null,
@@ -219,8 +224,8 @@ export class PublikasiController {
                     halaman: detail?.halaman || null,
                     seminar: detail?.seminar || null,
                     prosiding: detail?.prosiding || null,
-                    komentar: detail?.komentar || null,
-                    kategori_kegiatan: detail?.kategori_kegiatan || null,
+                    komentar: detail?.publikasi_riwayat?.[0]?.catatan || null,
+                    kategori_kegiatan: detail?.kategori_kegiatan || p.kategori_kegiatan || "",
                     kategori_capaian_luaran: detail?.kategori_capaian_luaran || null,
                     
                 };
@@ -291,8 +296,7 @@ export class PublikasiController {
                         halaman: data.halaman || null,
                         status: data.status || "approved",
                         seminar: isSeminar,
-                        prosiding: isProsiding,
-                        komentar: "-"
+                        prosiding: isProsiding
                     }
                 });
             });
@@ -485,7 +489,7 @@ export class PublikasiController {
         const existingSisterIds = localPublikasi.map((row: { id: string }) => row.id);
 
         // 3. Gabungkan data SISTER dengan flag status keberadaan di lokal
-        const formattedData = rawSisterData.map((item: any) => {
+        const formattedData = rawSisterData.map((item: any): Publikasi & Record<string, any> => {
             return {
                 ...item,
                 existsLocally: existingSisterIds.includes(item.id) 

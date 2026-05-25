@@ -17,7 +17,11 @@ export class ReviewerController {
                             judul: true,
                             tanggal: true,
                             status: true,
-                            komentar: true,
+                            publikasi_riwayat: {
+                                orderBy: { tanggal: 'desc' },
+                                take: 1,
+                                select: { catatan: true }
+                            },
                             jenis_publikasi: true,
                             nomor_paten: true,
                             
@@ -41,7 +45,7 @@ export class ReviewerController {
                 judul: item.detail_publikasi?.judul,
                 tanggal: item.detail_publikasi?.tanggal,
                 status: item.detail_publikasi?.status,
-                komentar: item.detail_publikasi?.komentar,
+                komentar: item.detail_publikasi?.publikasi_riwayat?.[0]?.catatan || "-",
                 jenis_publikasi: item.detail_publikasi?.jenis_publikasi,
                 nomor_paten: item.detail_publikasi?.nomor_paten,
                 
@@ -79,11 +83,25 @@ export class ReviewerController {
             }
 
             // Eksekusi Update menggunakan Prisma
-            await prisma.detail_publikasi.update({
-                where: { id: idPublikasi },
-                data: {
-                    status: status,
-                    komentar: komentar || null
+            await prisma.$transaction(async (tx) => {
+                await tx.detail_publikasi.update({
+                    where: { id: idPublikasi },
+                    data: {
+                        status: status
+                    }
+                });
+
+                if (komentar) {
+                    await tx.publikasi_riwayat.create({
+                        data: {
+                            id_publikasi: idPublikasi,
+                            tanggal: new Date(),
+                            status: status,
+                            aktor: "Reviewer",
+                            peran: "Reviewer",
+                            catatan: komentar
+                        }
+                    });
                 }
             });
 

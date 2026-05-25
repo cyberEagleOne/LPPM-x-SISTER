@@ -121,10 +121,10 @@ model detail_publikasi {
   prosiding                  Boolean?            @default(false)
   asal_data                  String?             @db.VarChar(100)
   status                     String              @db.VarChar(50)
-  komentar                   String              @db.Text
   publikasi                  publikasi           @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dt_penelitian_pb")
   publikasi_dokumen          publikasi_dokumen[]
   publikasi_penulis          publikasi_penulis[]
+  publikasi_riwayat          publikasi_riwayat[]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -239,16 +239,17 @@ model publikasi_penulis {
   @@index([id_publikasi], map: "fk_dt_publikasi")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model publikasi_riwayat {
-  id      Int
-  tanggal DateTime @db.DateTime(0)
-  status  String   @db.VarChar(20)
-  aktor   String   @db.VarChar(100)
-  peran   String   @db.VarChar(20)
-  catatan String?  @db.Text
+  id               Int              @id @default(autoincrement())
+  id_publikasi     String           @db.Char(36)
+  tanggal          DateTime         @db.DateTime(0)
+  status           String           @db.VarChar(20)
+  aktor            String           @db.VarChar(100)
+  peran            String           @db.VarChar(20)
+  catatan          String?          @db.Text
+  detail_publikasi detail_publikasi @relation(fields: [id_publikasi], references: [id], onDelete: Cascade, map: "fk_publikasi_riwayat_dt")
 
-  @@ignore
+  @@index([id_publikasi], map: "fk_publikasi_riwayat_dt")
 }
 
 model token {
