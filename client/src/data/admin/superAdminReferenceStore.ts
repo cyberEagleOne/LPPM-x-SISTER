@@ -90,10 +90,10 @@ export const DEFAULT_STUDY_PROGRAMS: StudyProgramItem[] = [
 ];
 
 export const DEFAULT_OFFICIALS: OfficialItem[] = [
-  { id: "PJB-001", name: "Prof. Dr. Surya Kencana", position: "Rektor", unit: "Universitas", email: "rektor@pradita.ac.id" },
-  { id: "PJB-002", name: "Prof. Dimas Prakoso", position: "Ketua LPPM", unit: "LPPM", email: "ketua.lppm@pradita.ac.id" },
-  { id: "PJB-003", name: "Dr. Hadi Saputra", position: "Wakil Rektor Bidang Akademik", unit: "Universitas", email: "wr1@pradita.ac.id" },
-  { id: "PJB-004", name: "Dr. Gilang Perdana", position: "Dekan Fakultas Teknologi", unit: "Fakultas Teknologi", email: "dekan.ft@pradita.ac.id" },
+  { id: "PJB-001", name: "Prof. Dr. Rektor Demo", position: "Rektor", unit: "Universitas", email: "rektor@example.com" },
+  { id: "PJB-002", name: "Prof. Reviewer Utama, Ph.D.", position: "Ketua LPPM", unit: "LPPM", email: "lppm@example.com" },
+  { id: "PJB-003", name: "Dr. Wakil Rektor Demo", position: "Wakil Rektor Bidang Akademik", unit: "Universitas", email: "wr1@example.com" },
+  { id: "PJB-004", name: "Dr. Dekan Demo", position: "Dekan Fakultas Teknologi", unit: "Fakultas Teknologi", email: "dekan@example.com" },
 ];
 
 export const DEFAULT_REFERENCE_GROUPS: ReferenceGroupItem[] = [

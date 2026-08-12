@@ -18,10 +18,10 @@ export interface User {
 }
 
 const MOCK_USERS: Record<UserRole, User> = {
-  administrator: { id: "1", name: "Raka Pratama", email: "raka.pratama@pradita.ac.id", role: "administrator" },
-  dosen: { id: "3", name: "Dr. Arif Ramadhan, M.Sc.", email: "arif.ramadhan@pradita.ac.id", role: "dosen", nidn: "0312098901", fakultas: "Fakultas Teknologi", prodi: "Teknik Informatika" },
-  reviewer: { id: "4", name: "Prof. Dimas Prakoso", email: "dimas.prakoso@pradita.ac.id", role: "reviewer" },
-  "halaman-umum": { id: "14", name: "Aulia Rahman", email: "aulia.rahman@pradita.ac.id", role: "halaman-umum" },
+  administrator: { id: "1", name: "Admin Demo", email: "admin@example.com", role: "administrator" },
+  dosen: { id: "3", name: "Dr. Dosen Utama, M.Sc.", email: "dosen@example.com", role: "dosen", nidn: "0312098901", fakultas: "Fakultas Teknologi", prodi: "Teknik Informatika" },
+  reviewer: { id: "4", name: "Prof. Reviewer Utama, Ph.D.", email: "reviewer@example.com", role: "reviewer" },
+  "halaman-umum": { id: "14", name: "User Demo", email: "user@example.com", role: "halaman-umum" },
 };
 
 interface AuthContextType {

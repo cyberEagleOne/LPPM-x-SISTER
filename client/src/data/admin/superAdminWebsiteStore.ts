@@ -91,13 +91,13 @@ function writeStorage<T>(key: string, value: T) {
 
 export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettingsData = {
   image: null,
-  siteName: "LPPM Pradita University",
+  siteName: "LPPM Portal Integration",
   about:
-    "LPPM Universitas Pradita berfokus pada penguatan budaya riset, pengabdian masyarakat, dan hilirisasi inovasi kampus.",
-  address: "Scientia Business Park, Gading Serpong, Tangerang",
-  email: "lppm@pradita.ac.id",
-  phone: "+62 21 5568 9999",
-  urls: ["https://pradita.ac.id", "https://sippm.pradita.ac.id"],
+    "Portal LPPM berfokus pada penguatan budaya riset, pengabdian masyarakat, dan hilirisasi inovasi kampus.",
+  address: "Kawasan Edukasi Terpadu, Jakarta",
+  email: "lppm@example.com",
+  phone: "+62 21 5555 9999",
+  urls: ["https://example.com", "https://sippm.example.com"],
   templatePenelitian:
     "Template dokumen penelitian mencakup pengesahan, proposal, laporan kemajuan, dan laporan akhir.",
   templatePkm:
@@ -120,14 +120,14 @@ export const DEFAULT_WEBSITE_CATEGORIES: WebsiteCategoryItem[] = [
 export const DEFAULT_WEBSITE_POSTS: WebsitePostItem[] = [
   {
     id: "POST-001",
-    judul: "LPPM Pradita Raih Hibah DRTPM 2026 untuk 8 Penelitian",
+    judul: "Portal LPPM Raih Hibah Penelitian 2026",
     penulis: ["Admin LPPM"],
-    editor: "Raka Pratama",
+    editor: "Admin Demo",
     kategoris: ["Berita"],
     excerpt:
-      "LPPM Universitas Pradita berhasil meloloskan 8 proposal penelitian dalam kompetisi Hibah DRTPM 2026.",
+      "Tim LPPM berhasil meloloskan proposal penelitian dalam kompetisi Hibah Riset 2026.",
     body:
-      "LPPM Universitas Pradita berhasil meloloskan 8 proposal penelitian dalam kompetisi Hibah DRTPM 2026. Capaian ini menjadi modal penting untuk memperkuat ekosistem riset kampus.",
+      "Tim LPPM berhasil meloloskan proposal penelitian dalam kompetisi Hibah Riset 2026. Capaian ini menjadi modal penting untuk memperkuat ekosistem riset kampus.",
     regionberita: ["homepage", "riset"],
     image: null,
     namaimage: "",

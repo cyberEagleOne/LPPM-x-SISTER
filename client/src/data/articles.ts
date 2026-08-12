@@ -14,10 +14,10 @@ export const articles: Article[] = [
     id: "optimalisasi-rumah-bibit",
     title: 'Optimalisasi Rumah Bibit di "Rumah Peng Anggur an", Budi Daya Anggur Lahan Terbatas Kota Tangerang',
     description: "Program pengabdian masyarakat untuk budidaya anggur lahan terbatas di Kota Tangerang.",
-    content: `<p>Program pengabdian masyarakat ini merupakan inisiatif kolaboratif antara Universitas Pradita dengan masyarakat Kota Tangerang dalam upaya mengoptimalkan budidaya anggur di lahan terbatas perkotaan.</p>
-    <p>Kegiatan ini melibatkan dosen dan mahasiswa dari berbagai program studi yang bekerja sama dengan kelompok tani "Rumah Peng Anggur an" untuk mengembangkan teknik budidaya yang efisien dan berkelanjutan.</p>
+    content: `<p>Program pengabdian masyarakat ini merupakan inisiatif kolaboratif antara Universitas Demo dengan masyarakat dalam upaya mengoptimalkan budidaya anggur di lahan terbatas perkotaan.</p>
+    <p>Kegiatan ini melibatkan dosen dan mahasiswa dari berbagai program studi yang bekerja sama dengan kelompok tani untuk mengembangkan teknik budidaya yang efisien dan berkelanjutan.</p>
     <h3>Latar Belakang</h3>
-    <p>Urbanisasi yang semakin pesat telah mengurangi lahan pertanian di Kota Tangerang. Namun, semangat masyarakat untuk berkebun tetap tinggi. Program ini hadir untuk menjembatani keterbatasan lahan dengan teknik budidaya modern seperti vertikultur dan hidroponik sederhana.</p>
+    <p>Urbanisasi yang semakin pesat telah mengurangi lahan pertanian. Namun, semangat masyarakat untuk berkebun tetap tinggi. Program ini hadir untuk menjembatani keterbatasan lahan dengan teknik budidaya modern seperti vertikultur dan hidroponik sederhana.</p>
     <h3>Tujuan Program</h3>
     <ul>
       <li>Meningkatkan kapasitas petani urban dalam budidaya anggur</li>
@@ -30,18 +30,18 @@ export const articles: Article[] = [
     <p>Kegiatan ini juga menghasilkan modul panduan budidaya anggur lahan terbatas yang dapat direplikasi di daerah urban lainnya. Para peserta mendapat pelatihan intensif tentang pemilihan bibit, teknik pembibitan, pengendalian hama, dan manajemen pasca panen.</p>`,
     image: "https://images.unsplash.com/photo-1770982698865-10713fa6f73b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmFwZSUyMGZhcm1pbmclMjB1cmJhbiUyMGdhcmRlbiUyMGdyZWVuaG91c2V8ZW58MXx8fHwxNzcxNTUzODUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
     date: "15 November 2024",
-    author: "Tim LPPM Pradita",
+    author: "Tim LPPM Demo",
     category: "Pengabdian Masyarakat",
   },
   {
     id: "monev-internal-2024",
-    title: "Monev Internal Universitas Pradita 2024",
-    description: "Bapak dan Ibu dosen Universitas Pradita yang tertarik, silakan hadir untuk menyaksikan Monev Internal ini. Untuk...",
-    content: `<p>Monitoring dan Evaluasi (Monev) Internal Universitas Pradita tahun 2024 telah dilaksanakan sebagai bentuk pengawasan dan penjaminan mutu terhadap seluruh kegiatan penelitian yang didanai melalui hibah internal universitas.</p>
+    title: "Monev Internal Universitas Demo 2024",
+    description: "Bapak dan Ibu dosen Universitas Demo yang tertarik, silakan hadir untuk menyaksikan Monev Internal ini. Untuk...",
+    content: `<p>Monitoring dan Evaluasi (Monev) Internal Universitas Demo tahun 2024 telah dilaksanakan sebagai bentuk pengawasan dan penjaminan mutu terhadap seluruh kegiatan penelitian yang didanai melalui hibah internal universitas.</p>
     <h3>Latar Belakang</h3>
-    <p>Monev internal merupakan kegiatan rutin tahunan yang diselenggarakan oleh LPPM Universitas Pradita untuk memastikan bahwa setiap penelitian yang didanai berjalan sesuai dengan rencana, target, dan timeline yang telah ditetapkan.</p>
+    <p>Monev internal merupakan kegiatan rutin tahunan yang diselenggarakan oleh LPPM Universitas Demo untuk memastikan bahwa setiap penelitian yang didanai berjalan sesuai dengan rencana, target, dan timeline yang telah ditetapkan.</p>
     <h3>Pelaksanaan</h3>
-    <p>Kegiatan Monev dilaksanakan selama 3 hari pada tanggal 20-22 Oktober 2024 bertempat di Gedung Scientia Business Park Tower I. Total 45 proposal penelitian dari berbagai fakultas dipresentasikan di hadapan reviewer internal dan eksternal.</p>
+    <p>Kegiatan Monev dilaksanakan selama 3 hari pada tanggal 20-22 Oktober 2024. Total 45 proposal penelitian dari berbagai fakultas dipresentasikan di hadapan reviewer internal dan eksternal.</p>
     <h3>Aspek Penilaian</h3>
     <ul>
       <li>Capaian luaran penelitian (publikasi, HKI, produk)</li>
@@ -58,11 +58,11 @@ export const articles: Article[] = [
   },
   {
     id: "lolos-hibah-drtpm-2024",
-    title: "Universitas Pradita Lolos Hibah DRTPM 2024!",
+    title: "Universitas Demo Lolos Hibah DRTPM 2024!",
     description: "Langkah maju ini bukan hanya tentang memenangkan hibah, tapi juga tentang membuka jalan baru untuk inovasi...",
-    content: `<p>Universitas Pradita kembali menorehkan prestasi membanggakan dengan berhasil meloloskan beberapa proposal penelitian dan pengabdian masyarakat pada skema hibah DRTPM (Direktorat Riset, Teknologi, dan Pengabdian kepada Masyarakat) Kemendikbudristek tahun 2024.</p>
+    content: `<p>Universitas Demo kembali menorehkan prestasi membanggakan dengan berhasil meloloskan beberapa proposal penelitian dan pengabdian masyarakat pada skema hibah DRTPM (Direktorat Riset, Teknologi, dan Pengabdian kepada Masyarakat) Kemendikbudristek tahun 2024.</p>
     <h3>Pencapaian</h3>
-    <p>Tahun ini, Universitas Pradita berhasil meloloskan 8 proposal penelitian dan 3 proposal pengabdian masyarakat pada berbagai skema pendanaan DRTPM, dengan total pendanaan mencapai lebih dari Rp 1,5 miliar.</p>
+    <p>Tahun ini, Universitas Demo berhasil meloloskan 8 proposal penelitian dan 3 proposal pengabdian masyarakat pada berbagai skema pendanaan DRTPM, dengan total pendanaan mencapai lebih dari Rp 1,5 miliar.</p>
     <h3>Skema yang Berhasil Didanai</h3>
     <ul>
       <li>Penelitian Dasar - 3 proposal</li>
@@ -73,9 +73,9 @@ export const articles: Article[] = [
       <li>Program Pengembangan Desa Mitra - 1 proposal</li>
     </ul>
     <h3>Kata Rektor</h3>
-    <p>"Keberhasilan ini merupakan bukti nyata komitmen Universitas Pradita dalam pengembangan riset dan inovasi. Kami bangga dengan para dosen yang telah bekerja keras menyusun proposal berkualitas tinggi," ujar Rektor Universitas Pradita.</p>
+    <p>"Keberhasilan ini merupakan bukti nyata komitmen Universitas Demo dalam pengembangan riset dan inovasi. Kami bangga dengan para dosen yang telah bekerja keras menyusun proposal berkualitas tinggi," ujar Rektor Universitas Demo.</p>
     <h3>Dukungan LPPM</h3>
-    <p>LPPM Universitas Pradita telah memberikan dukungan penuh melalui serangkaian workshop penulisan proposal, clinic proposal, dan pendampingan intensif kepada seluruh dosen yang mengajukan proposal ke DRTPM.</p>`,
+    <p>LPPM Universitas Demo telah memberikan dukungan penuh melalui serangkaian workshop penulisan proposal, clinic proposal, dan pendampingan intensif kepada seluruh dosen yang mengajukan proposal ke DRTPM.</p>`,
     image: "https://images.unsplash.com/photo-1578269174936-2709b6aeb913?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXNlYXJjaCUyMGdyYW50JTIwc3VjY2VzcyUyMGNlbGVicmF0aW9uJTIwdHJvcGh5fGVufDF8fHx8MTc3MTU1Mzg1MXww&ixlib=rb-4.1.0&q=80&w=1080",
     date: "5 September 2024",
     author: "Humas LPPM",
@@ -96,12 +96,12 @@ export const relatedArticles: Article[] = [
   },
   {
     id: "pengabdian-desa-mitra",
-    title: "Program Pengabdian Desa Mitra Universitas Pradita",
+    title: "Program Pengabdian Desa Mitra Universitas Demo",
     description: "Kolaborasi dengan desa mitra untuk pengembangan teknologi tepat guna bagi masyarakat pedesaan.",
     content: "",
     image: "https://ipol.id/wp-content/uploads/2025/06/70e1f797-38b3-4bcd-b4fc-ebff831a9a1e-860x572.jpg",
     date: "1 Juli 2024",
-    author: "Tim LPPM Pradita",
+    author: "Tim LPPM Demo",
     category: "Pengabdian Masyarakat",
   },
   {

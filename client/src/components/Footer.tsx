@@ -36,9 +36,9 @@ export function Footer() {
               <h4 className="text-sm text-white" style={{ fontWeight: 700 }}>Contact Us</h4>
             </div>
             <div className="space-y-2 text-sm text-slate-300">
-              <p><span style={{ fontWeight: 600 }}>Phone:</span> 021 5568 9999</p>
-              <p><span style={{ fontWeight: 600 }}>Mobile:</span> 0815 8510 9999</p>
-              <p><span style={{ fontWeight: 600 }}>Email:</span> lppm@pradita.ac.id</p>
+              <p><span style={{ fontWeight: 600 }}>Phone:</span> 021 5555 9999</p>
+              <p><span style={{ fontWeight: 600 }}>Mobile:</span> 0812 3456 7890</p>
+              <p><span style={{ fontWeight: 600 }}>Email:</span> lppm@example.com</p>
             </div>
           </div>
 
